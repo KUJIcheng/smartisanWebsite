@@ -31,7 +31,7 @@
 
   <svg {width} {height} style="top: {topPosition}px;" viewBox="0 0 {width} {height}">
     <rect width={width} height={height} fill="transparent"/>
-    <image href="/icons/CloudSyncShare.png" x="{width / 2 - 50}" y="{height / 2 - 50}" height={height*0.22} width={height*0.22} id="icon"/>
+    <image href="/setting.png" x="{width / 2 - 50}" y="{height / 2 - 50}" height={height*0.22} width={height*0.22} id="icon"/>
   </svg>
 </main>
 
