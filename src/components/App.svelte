@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import * as d3 from 'd3';
 
   let height, width, topPosition;
 
@@ -30,13 +31,13 @@
 
   <svg {width} {height} style="top: {topPosition}px;" viewBox="0 0 {width} {height}">
     <rect width={width} height={height} fill="transparent"/>
-    <image href="/icons/com.tencent.mm.com.tencent.mm.png" x="{width / 2 - 50}" y="{height / 2 - 50}" height=80 width=80 id="icon"/>
+    <image href="/icons/taobao.png" x="{width / 2 - 50}" y="{height / 2 - 50}" height={height*0.22} width={height*0.22} id="icon"/>
   </svg>
 </main>
 
 <style>
   :global(body) {
-    background-image: url('/backgrounds/background9.jpg'); /* 设置背景图片 */
+    background-image: url('/backgrounds/background13.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
@@ -77,6 +78,11 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加平滑过渡效果 */
   }
 
+  .search-input:hover {
+    transform: scale(1.01); /* 鼠标悬停时放大到原始尺寸的 101% */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35), 0 15px 30px rgba(0, 0, 0, 0.25); /* 鼠标悬停时加深阴影 */
+  }
+
   /* 可以添加一些过渡效果来增强视觉效果 */
   .search-input:focus {
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
@@ -92,6 +98,6 @@
 
   #icon:hover {
     transform: scale(1.1);
-    filter: drop-shadow(0px 8px 7px rgba(0,0,0,0.7));
+    filter: drop-shadow(0px 10px 7px rgba(0,0,0,0.7));
   }
 </style>
