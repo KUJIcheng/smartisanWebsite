@@ -1,8 +1,7 @@
 <script>
   import { onMount } from 'svelte';
-  import * as d3 from 'd3';
 
-  let height, width, topPosition;
+  let height, width, topPosition, iconX, iconY, iconSize;
 
   onMount(() => {
     calculateSizeAndPosition();
@@ -12,14 +11,15 @@
       window.removeEventListener('resize', calculateSizeAndPosition);
     };
   });
-
-  // 动态计算SVG的宽高和位置
+  // 动态计算
   function calculateSizeAndPosition() {
     const pageHeight = window.innerHeight;
     height = pageHeight * 0.5;
-    // width = height * 21 / 8;
-    width = window.innerWidth
-    topPosition = pageHeight * 0.5;
+    width = window.innerWidth;
+    topPosition = pageHeight * 0.5; // 计算 SVG 顶部位置
+    iconSize = height * 0.22; // 图标大小
+    iconX = (width * 0.5 - iconSize / 2); // 图标 X 坐标
+    iconY = (height * 0.5 - iconSize / 2); // 图标 Y 坐标
   }
 </script>
 
@@ -27,17 +27,18 @@
   <div class="search-container">
     <input class="search-input" placeholder="Search..." />
   </div>
-  <svg {width} {height} style="top: {topPosition}px;" viewBox="0 0 {width} {height}">
-
-  <svg {width} {height} style="top: {topPosition}px;" viewBox="0 0 {width} {height}">
+  <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%);" viewBox="0 0 {width} {height}">
     <rect width={width} height={height} fill="transparent"/>
-    <image href="/setting.png" x="{width / 2 - 50}" y="{height / 2 - 50}" height={height*0.22} width={height*0.22} id="icon"/>
+    <g id="icon-container" style="transform-origin: {iconX + iconSize / 2}px {iconY + iconSize / 2}px;">
+      <image href="/icons/setting.png" x={iconX} y={iconY} height={iconSize} width={iconSize} />
+    </g>
   </svg>
 </main>
 
+
 <style>
   :global(body) {
-    background-image: url('/backgrounds/background13.jpg'); /* 设置背景图片 */
+    background-image: url('/backgrounds/background9.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
@@ -86,18 +87,17 @@
   /* 可以添加一些过渡效果来增强视觉效果 */
   .search-input:focus {
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
-    transform: scale(1.02); /* 放大到原始尺寸的105% */
+    transform: scale(1.02); /* 放大到原始尺寸的102% */
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 18px 36px rgba(0, 0, 0, 0.3); /* 加深并加长阴影 */
   }
 
-  #icon {
+  #icon-container {
     transition: transform 0.3s ease, filter 0.3s ease;
-    transform-origin: center; /* 明确指定变换原点在中心 */
     filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
   }
 
-  #icon:hover {
+  #icon-container:hover {
     transform: scale(1.1);
-    filter: drop-shadow(0px 10px 7px rgba(0,0,0,0.7));
+    filter: drop-shadow(0 10px 7px rgba(0, 0, 0, 0.7));
   }
 </style>
