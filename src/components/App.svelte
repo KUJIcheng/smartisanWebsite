@@ -31,12 +31,11 @@
     <rect width={width} height={height} fill="transparent"/>
 
     <g id="icon-container" style="transform-origin: {iconX + iconSize / 2}px {iconY + iconSize / 2}px;">
-      <image href="setting.png" x={iconX} y={iconY} height={iconSize} width={iconSize} />
+      <image href="icons/setting.png" x={iconX} y={iconY} height={iconSize} width={iconSize} />
     </g>
-    
+
   </svg>
 </main>
-
 
 <style>
   :global(body) {
