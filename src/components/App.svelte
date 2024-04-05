@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { fade, fly } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
 
   let height, width, topPosition, iconsize;
 
@@ -8,6 +8,12 @@
   
   // 闪念胶囊的位置
   let snjntop, snjnleft;
+
+  // 桌面设置的位置
+  let zmsztop, zmszright;
+
+  // 搜索栏的上下高度
+  let searchbarheight;
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
@@ -29,12 +35,17 @@
     width = window.innerWidth;
     height = pageHeight * svgCoverPercentage; // 根据比例计算高度
     topPosition = pageHeight * (1 - svgCoverPercentage); // 计算顶部位置
-    buttonTopPosition = topPosition + 6; // SVG顶部位置下方6px
+    buttonTopPosition = topPosition + 5; // SVG顶部位置下方5px
     iconsize = height * 0.7
+    searchbarheight = window.innerHeight * 0.03
 
     // 闪念胶囊位置的动态计算
     snjntop = topPosition + (height * 0.5) - iconsize * 0.5;
     snjnleft = (width * 0.01);
+
+    // 桌面设置图标位置的动态计算
+    zmsztop = topPosition + (height * 0.5) - iconsize * 0.5;
+    zmszright = (width * 0.01);
   }
 
   // 处理鼠标滚轮事件的函数
@@ -66,8 +77,8 @@
 </script>
 
 <main>
-  <div class="search-container" style="top: {searchContainerTop};">
-    <input class="search-input" placeholder="Search..." />
+  <div class="search-container" style="top: {searchContainerTop}">
+    <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
   </div>
 
   <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%); transition: height 0.3s, top 0.3s;" viewBox="0 0 {width} {height}">
@@ -75,8 +86,14 @@
   </svg>
 
   {#if isVisible}
-    <div transition:fly="{{ y: 35, duration: 300 }}" id="icon-container" style="position: absolute; top: {snjntop}px; left: {snjnleft}px; width: {iconsize}px; height: {iconsize}px;">
+    <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {snjntop}px; left: {snjnleft}px; width: {iconsize}px; height: {iconsize}px;">
       <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
+    </div>
+  {/if}
+
+  {#if isVisible}
+    <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {zmsztop}px; right: {zmszright}px; width: {iconsize}px; height: {iconsize}px;">
+      <img src="icons/Desktop.png" alt="桌面设置" style="width: 100%; height: 100%;" />
     </div>
   {/if}
 
@@ -98,8 +115,7 @@
     position: absolute;
     left: 50%;
     transform: translate(-50%, 0%);
-    /*border-radius: 15px; /* 圆角 */
-    overflow: hidden; /* 确保圆角和滤镜效果生效 */
+    overflow: hidden; /* 确保滤镜效果生效 */
     backdrop-filter: blur(5px); /* 毛玻璃效果 */
     -webkit-backdrop-filter: blur(5px); /* Safari浏览器兼容 */
     background-color: rgba(120, 120, 120, 0.1); /* 背景颜色透明度，与毛玻璃效果结合 */
@@ -119,8 +135,6 @@
 
   .search-input {
     width: 100%;
-    padding: 10px 20px;
-    border-radius: 20px; /* 圆角 */
     border: none; /* 移除边框 */
     outline: none; /* 移除焦点边框 */
     backdrop-filter: blur(5px);
@@ -128,7 +142,6 @@
     background-color: rgba(255, 255, 255, 0.4); /* 调整背景颜色和透明度以适应毛玻璃效果 */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(0, 0, 0, 0.2); /* 同样的阴影效果 */
     color: #000; /* 文字颜色，根据背景调整 */
-    font-size: 15px; /* 文字大小 */
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加平滑过渡效果 */
   }
 

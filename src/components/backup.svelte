@@ -1,9 +1,19 @@
 <script>
   import { onMount } from 'svelte';
+  import { fly } from 'svelte/transition';
 
-  let height, width, topPosition, iconSize;
-  let settingiconX, settingiconY; // 设置的位置
-  let sciconX, sciconY; // 闪念胶囊位置
+  let height, width, topPosition, iconsize;
+
+  let isVisible = true; // 控制图标容器是否可见
+  
+  // 闪念胶囊的位置
+  let snjntop, snjnleft;
+
+  // 桌面设置的位置
+  let zmsztop, zmszright;
+
+  // 搜索栏的上下高度
+  let searchbarheight;
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
@@ -12,9 +22,11 @@
   onMount(() => {
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
+    window.addEventListener('wheel', handleWheel);
 
     return () => {
       window.removeEventListener('resize', calculateSizeAndPosition);
+      window.removeEventListener('wheel', handleWheel); // 确保在组件销毁时移除事件监听器
     };
   });
 
@@ -23,12 +35,29 @@
     width = window.innerWidth;
     height = pageHeight * svgCoverPercentage; // 根据比例计算高度
     topPosition = pageHeight * (1 - svgCoverPercentage); // 计算顶部位置
-    buttonTopPosition = topPosition + 6; // SVG顶部位置下方6px
-    iconSize = height * 0.22; // 初始页面的icon大小
-    settingiconX = (width * 0.5 - iconSize / 2);
-    settingiconY = (height * 0.5 - iconSize / 2);
-    sciconX = (width * 0.4 - iconSize / 2);
-    sciconY = (height * 0.5 - iconSize / 2);
+    buttonTopPosition = topPosition + 5; // SVG顶部位置下方5px
+    iconsize = height * 0.7
+    searchbarheight = window.innerHeight * 0.03
+
+    // 闪念胶囊位置的动态计算
+    snjntop = topPosition + (height * 0.5) - iconsize * 0.5;
+    snjnleft = (width * 0.01);
+
+    // 桌面设置图标位置的动态计算
+    zmsztop = topPosition + (height * 0.5) - iconsize * 0.5;
+    zmszright = (width * 0.01);
+  }
+
+  // 处理鼠标滚轮事件的函数
+  function handleWheel(event) {
+    // 检查滚动方向：deltaY > 0 表示向下滚动，deltaY < 0 表示向上滚动
+    if (event.deltaY > 0) {
+      // 向下滚动
+      if (svgCoverPercentage !== 0.5) toggleBoth();
+    } else if (event.deltaY < 0) {
+      // 向上滚动
+      if (svgCoverPercentage !== 0.1) toggleBoth();
+    }
   }
 
   function toggleSVGSize() {
@@ -37,40 +66,47 @@
     calculateSizeAndPosition();
   }
 
-  // 根据svgCoverPercentage决定是否显示图标
-  function shouldShowIcons() {
-    return svgCoverPercentage !== 0.5;
+  function toggleVisibility() {
+    isVisible = !isVisible;
+  }
+
+  function toggleBoth() {
+    toggleSVGSize(); // 调整SVG大小
+    toggleVisibility(); // 控制图标的显示和隐藏
   }
 </script>
 
 <main>
-  <div class="search-container" style="top: {searchContainerTop};">
-    <input class="search-input" placeholder="Search..." />
+  <div class="search-container" style="top: {searchContainerTop}">
+    <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
   </div>
 
   <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%); transition: height 0.3s, top 0.3s;" viewBox="0 0 {width} {height}">
     <rect width={width} height={height} fill="transparent"/>
-
-    <g id="icon-container" style="transform-origin: {sciconX + iconSize / 2}px {sciconY + iconSize / 2}px;">
-      <image href="icons/shinianCapsule.png" x={sciconX} y={sciconY} height={iconSize} width={iconSize} />
-    </g>
-
-    <g id="icon-container" style="transform-origin: {settingiconX + iconSize / 2}px {settingiconY + iconSize / 2}px;">
-      <image href="icons/setting.png" x={settingiconX} y={settingiconY} height={iconSize} width={iconSize} />
-    </g>
-
   </svg>
+
+  {#if isVisible}
+    <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {snjntop}px; left: {snjnleft}px; width: {iconsize}px; height: {iconsize}px;">
+      <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
+    </div>
+  {/if}
+
+  {#if isVisible}
+    <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {zmsztop}px; right: {zmszright}px; width: {iconsize}px; height: {iconsize}px;">
+      <img src="icons/Desktop.png" alt="桌面设置" style="width: 100%; height: 100%;" />
+    </div>
+  {/if}
 
   <!-- 按钮定位 -->
   <div class="button-container" style="top: {buttonTopPosition}px;">
-    <button class="button" on:click={toggleSVGSize}></button>
+    <button class="button" on:click={toggleBoth}></button>
   </div>
-
 </main>
 
 <style>
   :global(body) {
-    background-image: url('/backgrounds/background9.jpg'); /* 设置背景图片 */
+    overflow: hidden;
+    background-image: url('/backgrounds/background6.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
@@ -79,29 +115,26 @@
     position: absolute;
     left: 50%;
     transform: translate(-50%, 0%);
-    /*border-radius: 15px; /* 圆角 */
-    overflow: hidden; /* 确保圆角和滤镜效果生效 */
+    overflow: hidden; /* 确保滤镜效果生效 */
     backdrop-filter: blur(5px); /* 毛玻璃效果 */
     -webkit-backdrop-filter: blur(5px); /* Safari浏览器兼容 */
     background-color: rgba(120, 120, 120, 0.1); /* 背景颜色透明度，与毛玻璃效果结合 */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), /* 水平偏移 垂直偏移 模糊半径 颜色 */
-               0 0px 24px rgba(0, 0, 0, 0.2); /* 可以添加多层阴影，根据需求调整 */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3),
+               0 0px 24px rgba(0, 0, 0, 0.2);
     transition: height 0.3s, top 0.3s;
   }
 
   .search-container {
     position: absolute;
-    top: 20%; /* 根据需要调整 */
+    top: 20%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40%; /* 根据需要调整 */
-    transition: top 0.3s; /* 添加过渡效果 */
+    width: 40%;
+    transition: top 0.3s;
   }
 
   .search-input {
     width: 100%;
-    padding: 10px 20px;
-    border-radius: 20px; /* 圆角 */
     border: none; /* 移除边框 */
     outline: none; /* 移除焦点边框 */
     backdrop-filter: blur(5px);
@@ -109,7 +142,6 @@
     background-color: rgba(255, 255, 255, 0.4); /* 调整背景颜色和透明度以适应毛玻璃效果 */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(0, 0, 0, 0.2); /* 同样的阴影效果 */
     color: #000; /* 文字颜色，根据背景调整 */
-    font-size: 15px; /* 文字大小 */
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加平滑过渡效果 */
   }
 
@@ -123,16 +155,6 @@
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
     transform: scale(1.02); /* 放大到原始尺寸的102% */
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 18px 36px rgba(0, 0, 0, 0.3); /* 加深并加长阴影 */
-  }
-
-  #icon-container {
-    transition: transform 0.3s ease, filter 0.3s ease;
-    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
-  }
-
-  #icon-container:hover {
-    transform: scale(1.1);
-    filter: drop-shadow(0 10px 6px rgba(0, 0, 0, 0.7));
   }
 
   .button-container {
@@ -158,5 +180,16 @@
 
   .button:hover {
     background-color: rgba(255, 255, 255, 0.35); /* 鼠标悬停时的背景颜色为白色，透明度降低（更不透明） */
+  }
+
+  #icon-container {
+    display: inline-block;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+  }
+
+  #icon-container:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0px 10px 6px rgba(0,0,0,0.7));
   }
 </style>
