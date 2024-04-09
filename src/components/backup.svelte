@@ -3,8 +3,10 @@
   import { fly } from 'svelte/transition';
 
   let height, width, topPosition, iconsize;
+  let pageheight, pagewidth;
 
   let isVisible = true; // 控制图标容器是否可见
+  let showSidebar = false; // 闪念胶囊是否出现
   
   // 闪念胶囊的位置
   let snjntop, snjnleft;
@@ -17,6 +19,7 @@
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
+  let searchContainerLeft = '50%';
   let buttonTopPosition; // 按钮的顶部位置
 
   onMount(() => {
@@ -39,9 +42,13 @@
     iconsize = height * 0.7
     searchbarheight = window.innerHeight * 0.03
 
+    // 页面的高度和宽度的追踪
+    pageheight = window.innerHeight;
+    pagewidth = window.innerWidth;
+
     // 闪念胶囊位置的动态计算
     snjntop = topPosition + (height * 0.5) - iconsize * 0.5;
-    snjnleft = (width * 0.01);
+    snjnleft = (width * 0.4);
 
     // 桌面设置图标位置的动态计算
     zmsztop = topPosition + (height * 0.5) - iconsize * 0.5;
@@ -70,6 +77,12 @@
     isVisible = !isVisible;
   }
 
+  // 更改闪念胶囊页面是否出现状态
+  function toggleSidebar() {
+    showSidebar = !showSidebar;
+    searchContainerLeft = searchContainerLeft === '50%' ? '65%' : '50%';
+  }
+
   function toggleBoth() {
     toggleSVGSize(); // 调整SVG大小
     toggleVisibility(); // 控制图标的显示和隐藏
@@ -77,7 +90,7 @@
 </script>
 
 <main>
-  <div class="search-container" style="top: {searchContainerTop}">
+  <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}">
     <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
   </div>
 
@@ -87,13 +100,25 @@
 
   {#if isVisible}
     <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {snjntop}px; left: {snjnleft}px; width: {iconsize}px; height: {iconsize}px;">
-      <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
+      <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
+        <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
+      </button>
     </div>
   {/if}
 
+  <!-- 闪念胶囊右侧页面 -->
+  <div class="sidebar" style="transform: {showSidebar ? 'translateX(0)' : 'translateX(-100%)'};">
+    <svg width="{pagewidth * 0.3}px" height="{pageheight}px" style = "box-shadow: {showSidebar ? '0 6px 16px rgba(0, 0, 0, 0.3), 0 0px 24px rgba(0, 0, 0, 0.2)' : 'none'}; transition: box-shadow 0.5s ease-in-out;">
+        <rect width="100%" height="100%" fill="transparent"/>
+    </svg>
+  </div>
+
+
   {#if isVisible}
     <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {zmsztop}px; right: {zmszright}px; width: {iconsize}px; height: {iconsize}px;">
-      <img src="icons/Desktop.png" alt="桌面设置" style="width: 100%; height: 100%;" />
+      <button type="button" style="background: none; border: none; padding: 0; cursor: pointer;">
+        <img src="icons/Desktop.png" alt="桌面设置" style="width: 100%; height: 100%;" />
+      </button>
     </div>
   {/if}
 
@@ -101,6 +126,7 @@
   <div class="button-container" style="top: {buttonTopPosition}px;">
     <button class="button" on:click={toggleBoth}></button>
   </div>
+
 </main>
 
 <style>
@@ -130,7 +156,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     width: 40%;
-    transition: top 0.3s;
+    transition: top 0.3s, left 0.3s;
   }
 
   .search-input {
@@ -186,10 +212,25 @@
     display: inline-block;
     transition: transform 0.3s ease, filter 0.3s ease;
     filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+    cursor: pointer;
   }
 
   #icon-container:hover {
     transform: scale(1.1);
     filter: drop-shadow(0px 10px 6px rgba(0,0,0,0.7));
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 30%;
+    height: 100%;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    background-color: rgba(224, 224, 224, 0.1);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease-in-out;
+    z-index: 1;
   }
 </style>
