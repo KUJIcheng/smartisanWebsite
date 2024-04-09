@@ -157,7 +157,7 @@
 <style>
   :global(body) {
     overflow: hidden;
-    background-image: url('/backgrounds/background1.jpg'); /* 设置背景图片 */
+    background-image: url('/backgrounds/background3.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
