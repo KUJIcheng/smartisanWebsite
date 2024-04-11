@@ -20,7 +20,7 @@
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
-  let searchContainerLeft = '50%';
+  let searchContainerLeft = '48.6%';
   let buttonTopPosition; // 按钮的顶部位置
 
   onMount(() => {
@@ -81,7 +81,7 @@
   // 更改闪念胶囊页面是否出现
   function toggleSidebar() {
     showSidebar = !showSidebar;
-    searchContainerLeft = searchContainerLeft === '50%' ? '65%' : '50%';
+    searchContainerLeft = searchContainerLeft === '48.6%' ? '65%' : '48.6%';
     snjntop = snjntop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     snjnleft = snjnleft === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -89,7 +89,7 @@
   // 更改桌面设置页面是否出现
   function togglesettingbar() {
     showSettingbar = !showSettingbar;
-    searchContainerLeft = searchContainerLeft === '50%' ? '35%' : '50%';
+    searchContainerLeft = searchContainerLeft === '48.6%' ? '35%' : '48.6%';
     zmsztop = zmsztop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     zmszright = zmszright === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -99,7 +99,7 @@
     toggleVisibility(); // 控制图标的显示和隐藏
     showSidebar = false; // 闪念胶囊页面收回
     showSettingbar = false; // 桌面设置页面收回
-    searchContainerLeft = '50%' // 搜索框归位
+    searchContainerLeft = '48.6%' // 搜索框归位
   }
 
 </script>
@@ -157,7 +157,7 @@
 <style>
   :global(body) {
     overflow: hidden;
-    background-image: url('/backgrounds/background3.jpg'); /* 设置背景图片 */
+    background-image: url('/backgrounds/background1.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
@@ -180,7 +180,7 @@
     top: 20%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40%;
+    width: 36%;
     transition: top 0.3s, left 0.3s;
   }
 
@@ -192,7 +192,7 @@
     -webkit-backdrop-filter: blur(5px);
     background-color: rgba(255, 255, 255, 0.4); /* 调整背景颜色和透明度以适应毛玻璃效果 */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(0, 0, 0, 0.2); /* 同样的阴影效果 */
-    color: #000; /* 文字颜色，根据背景调整 */
+    color: #000; /* 文字颜色 */
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加平滑过渡效果 */
   }
 
@@ -201,7 +201,6 @@
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35), 0 15px 30px rgba(0, 0, 0, 0.25); /* 鼠标悬停时加深阴影 */
   }
 
-  /* 可以添加一些过渡效果来增强视觉效果 */
   .search-input:focus {
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
     transform: scale(1.02); /* 放大到原始尺寸的102% */
