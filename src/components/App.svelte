@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
+  import { Curtains, Plane } from 'curtainsjs';
 
   let height, width, topPosition, iconsize;
   let pageheight, pagewidth;
@@ -8,7 +9,12 @@
   let isVisible = true; // 控制图标容器是否可见
   let showSidebar = false; // 闪念胶囊是否出现
   let showSettingbar = false; // 桌面设置是否出现
-  
+
+  // 下雨的组件
+  let rain = true; // 控制雨滴效果是否激活
+  let rainCanvas, rainCtx;
+  let droplets = []; // 存储雨滴对象
+
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
@@ -20,13 +26,17 @@
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
-  let searchContainerLeft = '48.6%';
+  let searchContainerLeft = '48.4%';
   let buttonTopPosition; // 按钮的顶部位置
 
   onMount(() => {
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
     window.addEventListener('wheel', handleWheel);
+    // 下雨的开始加载
+    if (rain) {
+      startRain();
+    }
 
     return () => {
       window.removeEventListener('resize', calculateSizeAndPosition);
@@ -81,7 +91,7 @@
   // 更改闪念胶囊页面是否出现
   function toggleSidebar() {
     showSidebar = !showSidebar;
-    searchContainerLeft = searchContainerLeft === '48.6%' ? '65%' : '48.6%';
+    searchContainerLeft = searchContainerLeft === '48.4%' ? '65%' : '48.4%';
     snjntop = snjntop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     snjnleft = snjnleft === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -89,7 +99,7 @@
   // 更改桌面设置页面是否出现
   function togglesettingbar() {
     showSettingbar = !showSettingbar;
-    searchContainerLeft = searchContainerLeft === '48.6%' ? '35%' : '48.6%';
+    searchContainerLeft = searchContainerLeft === '48.4%' ? '35%' : '48.4%';
     zmsztop = zmsztop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     zmszright = zmszright === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -99,9 +109,67 @@
     toggleVisibility(); // 控制图标的显示和隐藏
     showSidebar = false; // 闪念胶囊页面收回
     showSettingbar = false; // 桌面设置页面收回
-    searchContainerLeft = '48.6%' // 搜索框归位
+    searchContainerLeft = '48.4%' // 搜索框归位
   }
 
+  // 雨滴效果的function范围
+  function toggleRain() {
+    rain = !rain;
+    if (rain) startRain();
+    else stopRain();
+  }
+
+  function startRain() {
+      rainCanvas = document.getElementById('rainCanvas');
+      rainCtx = rainCanvas.getContext('2d');
+
+      // 设置canvas大小
+      rainCanvas.width = window.innerWidth;
+      rainCanvas.height = window.innerHeight;
+
+      // 创建雨滴
+      createDroplets();
+
+      // 开始绘制雨滴
+      requestAnimationFrame(animateRain);
+  }
+
+  function stopRain() {
+      // 清空雨滴数组，停止动画
+      droplets = [];
+      rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+  }
+  function createDroplets() {
+      // 基于屏幕大小生成一定数量的雨滴
+      const numberOfDroplets = rainCanvas.width * rainCanvas.height / 7000;
+      for (let i = 0; i < numberOfDroplets; i++) {
+          droplets.push({
+              x: Math.random() * rainCanvas.width,
+              y: Math.random() * rainCanvas.height,
+              size: Math.random() * 2 + 1, // 雨滴大小
+              speed: Math.random() * 2 + 6 // 雨滴下落速度
+          });
+      }
+  }
+  function animateRain() {
+      if (!rain) return;
+      rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height); // 清除之前的绘制
+      droplets.forEach(droplet => {
+          droplet.y += droplet.speed; // 更新雨滴位置
+          if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雨滴落出画面，则重置位置
+          // 绘制椭圆形雨滴
+          rainCtx.beginPath();
+          // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+          rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
+          rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
+          rainCtx.fill();
+          // rainCtx.beginPath();
+          // rainCtx.arc(droplet.x, droplet.y, droplet.size, 0, Math.PI * 2);
+          // rainCtx.fillStyle = 'rgba(130,130,130,0.2)'; // 雨滴颜色
+          // rainCtx.fill();
+      });
+      requestAnimationFrame(animateRain);
+  }
 </script>
 
 <main>
@@ -152,12 +220,13 @@
     <button class="button" on:click={toggleBoth}></button>
   </div>
 
+  <canvas id="rainCanvas"></canvas>
 </main>
 
 <style>
   :global(body) {
     overflow: hidden;
-    background-image: url('/backgrounds/background1.jpg'); /* 设置背景图片 */
+    background-image: url('/backgrounds/background9.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
@@ -272,5 +341,15 @@
     transform: translateX(100%);
     transition: transform 0.5s ease-in-out;
     z-index: 0;
+  }
+
+  #rainCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -1; /* 根据你页面的其他元素调整这个值 */
   }
 </style>
