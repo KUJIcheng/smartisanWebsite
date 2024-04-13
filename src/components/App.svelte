@@ -1,7 +1,6 @@
 <script>
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
-  import { Curtains, Plane } from 'curtainsjs';
 
   let height, width, topPosition, iconsize;
   let pageheight, pagewidth;
@@ -11,7 +10,7 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活
+  let rain = false; // 控制雨滴效果是否激活
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
@@ -120,55 +119,58 @@
   }
 
   function startRain() {
-      rainCanvas = document.getElementById('rainCanvas');
-      rainCtx = rainCanvas.getContext('2d');
+    // 之前的降雨效果
+    rainCanvas = document.getElementById('rainCanvas');
+    rainCtx = rainCanvas.getContext('2d');
 
-      // 设置canvas大小
-      rainCanvas.width = window.innerWidth;
-      rainCanvas.height = window.innerHeight;
+    // 设置canvas大小
+    rainCanvas.width = window.innerWidth;
+    rainCanvas.height = window.innerHeight;
 
-      // 创建雨滴
-      createDroplets();
+    // 创建雨滴
+    createDroplets();
 
-      // 开始绘制雨滴
-      requestAnimationFrame(animateRain);
+    // 开始绘制雨滴
+    requestAnimationFrame(animateRain);
   }
 
   function stopRain() {
-      // 清空雨滴数组，停止动画
-      droplets = [];
-      rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+    // 清空雨滴数组，停止动画
+    droplets = [];
+    rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
   }
+
   function createDroplets() {
-      // 基于屏幕大小生成一定数量的雨滴
-      const numberOfDroplets = rainCanvas.width * rainCanvas.height / 7000;
-      for (let i = 0; i < numberOfDroplets; i++) {
-          droplets.push({
-              x: Math.random() * rainCanvas.width,
-              y: Math.random() * rainCanvas.height,
-              size: Math.random() * 2 + 1, // 雨滴大小
-              speed: Math.random() * 2 + 6 // 雨滴下落速度
-          });
-      }
+    // 基于屏幕大小生成一定数量的雨滴
+    const numberOfDroplets = rainCanvas.width * rainCanvas.height / 7000;
+    for (let i = 0; i < numberOfDroplets; i++) {
+      droplets.push({
+        x: Math.random() * rainCanvas.width,
+        y: Math.random() * rainCanvas.height,
+        size: Math.random() * 2 + 1, // 雨滴大小
+        speed: Math.random() * 2 + 6 // 雨滴下落速度
+        });
+    }
   }
+  
   function animateRain() {
-      if (!rain) return;
-      rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height); // 清除之前的绘制
-      droplets.forEach(droplet => {
-          droplet.y += droplet.speed; // 更新雨滴位置
-          if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雨滴落出画面，则重置位置
-          // 绘制椭圆形雨滴
-          rainCtx.beginPath();
-          // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
-          rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
-          rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
-          rainCtx.fill();
-          // rainCtx.beginPath();
-          // rainCtx.arc(droplet.x, droplet.y, droplet.size, 0, Math.PI * 2);
-          // rainCtx.fillStyle = 'rgba(130,130,130,0.2)'; // 雨滴颜色
-          // rainCtx.fill();
+    if (!rain) return;
+    rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height); // 清除之前的绘制
+    droplets.forEach(droplet => {
+      droplet.y += droplet.speed; // 更新雨滴位置
+      if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雨滴落出画面，则重置位置
+        // 绘制椭圆形雨滴
+        rainCtx.beginPath();
+        // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+        rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
+        rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
+        rainCtx.fill();
+        // rainCtx.beginPath();
+        // rainCtx.arc(droplet.x, droplet.y, droplet.size, 0, Math.PI * 2);
+        // rainCtx.fillStyle = 'rgba(130,130,130,0.2)'; // 雨滴颜色
+        // rainCtx.fill();
       });
-      requestAnimationFrame(animateRain);
+    requestAnimationFrame(animateRain);
   }
 </script>
 
