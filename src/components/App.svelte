@@ -10,12 +10,9 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = false; // 控制雨滴效果是否激活
+  let rain = true; // 控制雨滴效果是否激活
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
-
-  // 定义一个变量来存储RainyDay.js的实例
-  let rainyDayInstance; // 用于存储 RainyDay 实例
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
@@ -35,7 +32,8 @@
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
     window.addEventListener('wheel', handleWheel);
-    // 下雨的开始加载
+
+    // 基于rain判断是否下雨
     if (rain) {
       startRain();
     }
@@ -122,27 +120,6 @@
   }
 
   function startRain() {
-
-    // 如果已经初始化了 RainyDay 实例，则不重复初始化
-  if (!rainyDayInstance) {
-    const img = document.getElementById('background');
-    // 确保 img 元素加载完成
-    img.onload = function() {
-      // 初始化 RainyDay
-      rainyDayInstance = new RainyDay({
-        // 配置参数
-        image: this,
-        parentElement: document.body,
-        // ...其他参数...
-      });
-      rainyDayInstance.rain([[3, 3, 0.5]], 100);
-    };
-    // 如果图片已经加载完成，手动触发 onload
-    if (img.complete) {
-      img.onload();
-    }
-  }
-
     // 之前的降雨效果
     rainCanvas = document.getElementById('rainCanvas');
     rainCtx = rainCanvas.getContext('2d');
@@ -159,11 +136,6 @@
   }
 
   function stopRain() {
-    
-    if (rainyDayInstance) {
-      rainyDayInstance.destroy();
-      rainyDayInstance = null; // 清除引用
-    }
     // 清空雨滴数组，停止动画
     droplets = [];
     rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
@@ -252,20 +224,6 @@
   </div>
 
   <canvas id="rainCanvas"></canvas>
-
-  <img id="background" src="/backgrounds/background9.jpg" alt="Background" style="display:none;">
-  <script src="/js/rainyday.min.js" defer></script>
-
-  <button class="centered-button" on:click={() => {
-    rain = !rain;
-    if (rain) {
-      startRain();
-    } else {
-      stopRain();
-    }
-  }}>
-    Toggle Rain
-  </button>
 
 </main>
 
@@ -397,13 +355,5 @@
     height: 100vh;
     pointer-events: none;
     z-index: -1; /* 根据你页面的其他元素调整这个值 */
-  }
-
-  .centered-button {
-    top: 50%;       /* 放置在屏幕垂直中央 */
-    left: 50%;      /* 放置在屏幕水平中央 */
-    transform: translate(-50%, -50%); /* 使用transform来精确地居中按钮 */
-      /* 确保按钮在其他元素上面，设置一个足够大的z-index */
-    /* 您可以添加更多的样式，比如padding, fontsize, background等来美化按钮 */
   }
 </style>
