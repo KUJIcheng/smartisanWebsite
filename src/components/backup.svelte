@@ -7,7 +7,13 @@
 
   let isVisible = true; // 控制图标容器是否可见
   let showSidebar = false; // 闪念胶囊是否出现
-  
+  let showSettingbar = false; // 桌面设置是否出现
+
+  // 下雨的组件
+  let rain = true; // 控制雨滴效果是否激活
+  let rainCanvas, rainCtx;
+  let droplets = []; // 存储雨滴对象
+
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
@@ -19,13 +25,18 @@
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
-  let searchContainerLeft = '50%';
+  let searchContainerLeft = '48.4%';
   let buttonTopPosition; // 按钮的顶部位置
 
   onMount(() => {
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
     window.addEventListener('wheel', handleWheel);
+
+    // 基于rain判断是否下雨
+    if (rain) {
+      startRain();
+    }
 
     return () => {
       window.removeEventListener('resize', calculateSizeAndPosition);
@@ -48,7 +59,7 @@
 
     // 闪念胶囊位置的动态计算
     snjntop = topPosition + (height * 0.5) - iconsize * 0.5;
-    snjnleft = (width * 0.4);
+    snjnleft = (width * 0.01);
 
     // 桌面设置图标位置的动态计算
     zmsztop = topPosition + (height * 0.5) - iconsize * 0.5;
@@ -77,15 +88,90 @@
     isVisible = !isVisible;
   }
 
-  // 更改闪念胶囊页面是否出现状态
+  // 更改闪念胶囊页面是否出现
   function toggleSidebar() {
     showSidebar = !showSidebar;
-    searchContainerLeft = searchContainerLeft === '50%' ? '65%' : '50%';
+    searchContainerLeft = searchContainerLeft === '48.4%' ? '65%' : '48.4%';
+    snjntop = snjntop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
+    snjnleft = snjnleft === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
+  }
+
+  // 更改桌面设置页面是否出现
+  function togglesettingbar() {
+    showSettingbar = !showSettingbar;
+    searchContainerLeft = searchContainerLeft === '48.4%' ? '35%' : '48.4%';
+    zmsztop = zmsztop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
+    zmszright = zmszright === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
 
   function toggleBoth() {
     toggleSVGSize(); // 调整SVG大小
     toggleVisibility(); // 控制图标的显示和隐藏
+    showSidebar = false; // 闪念胶囊页面收回
+    showSettingbar = false; // 桌面设置页面收回
+    searchContainerLeft = '48.4%' // 搜索框归位
+  }
+
+  // 雨滴效果的function范围
+  function toggleRain() {
+    rain = !rain;
+    if (rain) startRain();
+    else stopRain();
+  }
+
+  function startRain() {
+    // 之前的降雨效果
+    rainCanvas = document.getElementById('rainCanvas');
+    rainCtx = rainCanvas.getContext('2d');
+
+    // 设置canvas大小
+    rainCanvas.width = window.innerWidth;
+    rainCanvas.height = window.innerHeight;
+
+    // 创建雨滴
+    createDroplets();
+
+    // 开始绘制雨滴
+    requestAnimationFrame(animateRain);
+  }
+
+  function stopRain() {
+    // 清空雨滴数组，停止动画
+    droplets = [];
+    rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+  }
+
+  function createDroplets() {
+    // 基于屏幕大小生成一定数量的雨滴
+    const numberOfDroplets = rainCanvas.width * rainCanvas.height / 7000;
+    for (let i = 0; i < numberOfDroplets; i++) {
+      droplets.push({
+        x: Math.random() * rainCanvas.width,
+        y: Math.random() * rainCanvas.height,
+        size: Math.random() * 2 + 1, // 雨滴大小
+        speed: Math.random() * 2 + 6 // 雨滴下落速度
+        });
+    }
+  }
+
+  function animateRain() {
+    if (!rain) return;
+    rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height); // 清除之前的绘制
+    droplets.forEach(droplet => {
+      droplet.y += droplet.speed; // 更新雨滴位置
+      if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雨滴落出画面，则重置位置
+        // 绘制椭圆形雨滴
+        rainCtx.beginPath();
+        // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+        rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
+        rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
+        rainCtx.fill();
+        // rainCtx.beginPath();
+        // rainCtx.arc(droplet.x, droplet.y, droplet.size, 0, Math.PI * 2);
+        // rainCtx.fillStyle = 'rgba(130,130,130,0.2)'; // 雨滴颜色
+        // rainCtx.fill();
+      });
+    requestAnimationFrame(animateRain);
   }
 </script>
 
@@ -99,40 +185,52 @@
   </svg>
 
   {#if isVisible}
-    <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {snjntop}px; left: {snjnleft}px; width: {iconsize}px; height: {iconsize}px;">
-      <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
-        <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
-      </button>
+    <div style="position: absolute; top: {snjntop}px; left: {snjnleft}px; transition: top 0.5s, left 0.5s; z-index: 2;">
+        <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+          <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
+            <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
+          </button>
+        </div>
     </div>
   {/if}
 
   <!-- 闪念胶囊右侧页面 -->
   <div class="sidebar" style="transform: {showSidebar ? 'translateX(0)' : 'translateX(-100%)'};">
-    <svg width="{pagewidth * 0.3}px" height="{pageheight}px" style = "box-shadow: {showSidebar ? '0 6px 16px rgba(0, 0, 0, 0.3), 0 0px 24px rgba(0, 0, 0, 0.2)' : 'none'}; transition: box-shadow 0.5s ease-in-out;">
+    <svg width="{pagewidth * 0.3}px" height="{pageheight}px" style = "box-shadow: {showSidebar ? '0 6px 16px rgba(0, 0, 0, 0.3), 0 0px 24px rgba(0, 0, 0, 0.2)' : 'none'}; transition: box-shadow 0.8s ease-in-out;">
         <rect width="100%" height="100%" fill="transparent"/>
     </svg>
   </div>
 
-
   {#if isVisible}
-    <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="position: absolute; top: {zmsztop}px; right: {zmszright}px; width: {iconsize}px; height: {iconsize}px;">
-      <button type="button" style="background: none; border: none; padding: 0; cursor: pointer;">
-        <img src="icons/Desktop.png" alt="桌面设置" style="width: 100%; height: 100%;" />
-      </button>
+    <div style="position: absolute; top: {zmsztop}px; right: {zmszright}px; transition: top 0.5s, right 0.5s; z-index: 2;">
+        <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+          <button type="button" on:click={togglesettingbar} style="background: none; border: none; padding: 0; cursor: pointer;">
+            <img src="icons/Desktop.png" alt="桌面设置图标" style="width: 100%; height: 100%;" />
+          </button>
+        </div>
     </div>
   {/if}
+
+  <!-- 桌面设置左侧页面 -->
+  <div class="settingbar" style="transform: {showSettingbar ? 'translateX(0)' : 'translateX(100%)'};">
+    <svg width="{pagewidth * 0.3}px" height="{pageheight}px" style = "box-shadow: {showSettingbar ? '0 6px 16px rgba(0, 0, 0, 0.3), 0 0px 24px rgba(0, 0, 0, 0.2)' : 'none'}; transition: box-shadow 0.8s ease-in-out;">
+        <rect width="100%" height="100%" fill="transparent"/>
+    </svg>
+  </div>
 
   <!-- 按钮定位 -->
   <div class="button-container" style="top: {buttonTopPosition}px;">
     <button class="button" on:click={toggleBoth}></button>
   </div>
 
+  <canvas id="rainCanvas"></canvas>
+
 </main>
 
 <style>
   :global(body) {
     overflow: hidden;
-    background-image: url('/backgrounds/background6.jpg'); /* 设置背景图片 */
+    background-image: url('/backgrounds/background9.jpg'); /* 设置背景图片 */
     background-size: cover; /* 保证背景图片铺满整个容器 */
     background-attachment: fixed; /* 背景图片不随滚动条滚动 */
   }
@@ -155,7 +253,7 @@
     top: 20%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40%;
+    width: 36%;
     transition: top 0.3s, left 0.3s;
   }
 
@@ -167,7 +265,7 @@
     -webkit-backdrop-filter: blur(5px);
     background-color: rgba(255, 255, 255, 0.4); /* 调整背景颜色和透明度以适应毛玻璃效果 */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(0, 0, 0, 0.2); /* 同样的阴影效果 */
-    color: #000; /* 文字颜色，根据背景调整 */
+    color: #000; /* 文字颜色 */
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加平滑过渡效果 */
   }
 
@@ -176,7 +274,6 @@
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35), 0 15px 30px rgba(0, 0, 0, 0.25); /* 鼠标悬停时加深阴影 */
   }
 
-  /* 可以添加一些过渡效果来增强视觉效果 */
   .search-input:focus {
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
     transform: scale(1.02); /* 放大到原始尺寸的102% */
@@ -202,6 +299,7 @@
     border: none; /* 移除边框 */
     cursor: pointer;
     transition: background-color 0.5s, opacity 0.5s; /* 添加透明度的过渡效果 */
+    z-index: 2;
   }
 
   .button:hover {
@@ -213,6 +311,7 @@
     transition: transform 0.3s ease, filter 0.3s ease;
     filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
     cursor: pointer;
+    z-index: 2;
   }
 
   #icon-container:hover {
@@ -226,11 +325,35 @@
     left: 0;
     width: 30%;
     height: 100%;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    background-color: rgba(224, 224, 224, 0.1);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    background-color: rgba(150, 150, 150, 0.05);
     transform: translateX(-100%);
     transition: transform 0.5s ease-in-out;
-    z-index: 1;
+    z-index: 0;
+  }
+
+  .settingbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 30%;
+    height: 100%;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    background-color: rgba(150, 150, 150, 0.05);
+    transform: translateX(100%);
+    transition: transform 0.5s ease-in-out;
+    z-index: 0;
+  }
+
+  #rainCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -1; /* 根据你页面的其他元素调整这个值 */
   }
 </style>

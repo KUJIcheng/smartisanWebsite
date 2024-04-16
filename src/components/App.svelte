@@ -10,7 +10,7 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活
+  let rain = true; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
@@ -120,6 +120,32 @@
   }
 
   function startRain() {
+
+    const rainDiv = document.getElementById('rainEffectContainer');
+    // 确保div是全屏的
+    rainDiv.style.width = "100vw";
+    rainDiv.style.height = "100vh";
+    rainDiv.style.position = "fixed";
+    rainDiv.style.top = "0";
+    rainDiv.style.left = "0";
+    rainDiv.style.zIndex = "0";  // 和下雨canvas同一层
+
+    // 实例化雨滴在玻璃上的效果
+    var rainyDay = new RainyDay({
+      image: 'myImage',  // 图像的ID
+      parentElement: rainDiv,
+      blur: 10, // 失效的内容
+      enableSizeChange: true,
+      crop: {
+        x: 16,
+        y: 10,
+        w: 200,
+        h: 100
+      },
+      gravityThreshold: 5,
+      fps: 100
+    });
+    
     // 之前的降雨效果
     rainCanvas = document.getElementById('rainCanvas');
     rainCtx = rainCanvas.getContext('2d');
@@ -133,6 +159,9 @@
 
     // 开始绘制雨滴
     requestAnimationFrame(animateRain);
+
+    // 雨滴滴在玻璃上的效果
+    rainyDay.rain(); //[ [3, 1, 0.1] ]
   }
 
   function stopRain() {
@@ -176,7 +205,13 @@
 </script>
 
 <main>
-  <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}">
+  <!-- 引入RainyDay.js库 -->
+  <script src="rainyday.min.js"></script>
+    
+  <!-- 设置图片为全屏背景 -->
+  <img id="myImage" src="backgrounds/background9.jpg" alt="Background" class="fullscreen-image">
+  
+  <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
     <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
   </div>
 
@@ -185,7 +220,7 @@
   </svg>
 
   {#if isVisible}
-    <div style="position: absolute; top: {snjntop}px; left: {snjnleft}px; transition: top 0.5s, left 0.5s; z-index: 2;">
+    <div style="position: absolute; top: {snjntop}px; left: {snjnleft}px; transition: top 0.5s, left 0.5s; z-index: 3;">
         <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
           <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
             <img src="icons/shinianCapsule.png" alt="闪念胶囊图标" style="width: 100%; height: 100%;" />
@@ -202,10 +237,10 @@
   </div>
 
   {#if isVisible}
-    <div style="position: absolute; top: {zmsztop}px; right: {zmszright}px; transition: top 0.5s, right 0.5s; z-index: 2;">
+    <div style="position: absolute; top: {zmsztop}px; right: {zmszright}px; transition: top 0.5s, right 0.5s; z-index: 3;">
         <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
           <button type="button" on:click={togglesettingbar} style="background: none; border: none; padding: 0; cursor: pointer;">
-            <img src="icons/Desktop.png" alt="桌面设置图标" style="width: 100%; height: 100%;" />
+            <img src="icons/setting.png" alt="桌面设置图标" style="width: 100%; height: 100%;" />
           </button>
         </div>
     </div>
@@ -219,20 +254,30 @@
   </div>
 
   <!-- 按钮定位 -->
-  <div class="button-container" style="top: {buttonTopPosition}px;">
+  <div class="button-container" style="top: {buttonTopPosition}px; z-index: 3;">
     <button class="button" on:click={toggleBoth}></button>
   </div>
 
   <canvas id="rainCanvas"></canvas>
+  <div id="rainEffectContainer"></div>
 
 </main>
 
 <style>
+  /* 全局样式修改 */
   :global(body) {
-    overflow: hidden;
-    background-image: url('/backgrounds/background9.jpg'); /* 设置背景图片 */
-    background-size: cover; /* 保证背景图片铺满整个容器 */
-    background-attachment: fixed; /* 背景图片不随滚动条滚动 */
+    margin: 0; /* 移除默认边距 */
+    overflow: hidden; /* 隐藏滚动条 */
+  }
+  
+  /* 背景图像样式，确保全屏显示且覆盖整个视口 */
+  .fullscreen-image {
+    top: 0; /* 顶部对齐 */
+    left: 0; /* 左侧对齐 */
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;  /* 覆盖整个内容区域 */
+    z-index: 0;  /* 确保图像在内容之下 */
   }
 
   svg {
@@ -246,6 +291,7 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3),
                0 0px 24px rgba(0, 0, 0, 0.2);
     transition: height 0.3s, top 0.3s;
+    z-index: 1;
   }
 
   .search-container {
@@ -299,7 +345,7 @@
     border: none; /* 移除边框 */
     cursor: pointer;
     transition: background-color 0.5s, opacity 0.5s; /* 添加透明度的过渡效果 */
-    z-index: 2;
+    z-index: 3;
   }
 
   .button:hover {
@@ -311,7 +357,7 @@
     transition: transform 0.3s ease, filter 0.3s ease;
     filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
     cursor: pointer;
-    z-index: 2;
+    z-index: 3;
   }
 
   #icon-container:hover {
@@ -330,7 +376,7 @@
     background-color: rgba(150, 150, 150, 0.05);
     transform: translateX(-100%);
     transition: transform 0.5s ease-in-out;
-    z-index: 0;
+    z-index: 2;
   }
 
   .settingbar {
@@ -344,7 +390,7 @@
     background-color: rgba(150, 150, 150, 0.05);
     transform: translateX(100%);
     transition: transform 0.5s ease-in-out;
-    z-index: 0;
+    z-index: 2;
   }
 
   #rainCanvas {
@@ -354,6 +400,16 @@
     width: 100vw;
     height: 100vh;
     pointer-events: none;
-    z-index: -1; /* 根据你页面的其他元素调整这个值 */
+    z-index: 0; /* 根据你页面的其他元素调整这个值 */
+  }
+
+  #rainEffectContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1; /* 确保这个div在背景之上，但在其他UI组件之下 */
+    pointer-events: none; /* 允许鼠标事件穿透到下层元素 */
   }
 </style>
