@@ -120,6 +120,20 @@
   }
 
   function startRain() {
+    
+    // 之前的降雨效果
+    rainCanvas = document.getElementById('rainCanvas');
+    rainCtx = rainCanvas.getContext('2d');
+
+    // 设置canvas大小
+    rainCanvas.width = window.innerWidth;
+    rainCanvas.height = window.innerHeight;
+
+    // 创建雨滴
+    createDroplets();
+
+    // 开始绘制雨滴
+    requestAnimationFrame(animateRain);
 
     const rainDiv = document.getElementById('rainEffectContainer');
     // 确保div是全屏的
@@ -145,20 +159,6 @@
       gravityThreshold: 5,
       fps: 100
     });
-    
-    // 之前的降雨效果
-    rainCanvas = document.getElementById('rainCanvas');
-    rainCtx = rainCanvas.getContext('2d');
-
-    // 设置canvas大小
-    rainCanvas.width = window.innerWidth;
-    rainCanvas.height = window.innerHeight;
-
-    // 创建雨滴
-    createDroplets();
-
-    // 开始绘制雨滴
-    requestAnimationFrame(animateRain);
 
     // 雨滴滴在玻璃上的效果
     rainyDay.rain( [[1, 0, 20], [3, 3, 1]], 50); //[ [3, 1, 0.1] ]
@@ -209,7 +209,7 @@
   <script src="jspack/rainyday.min.js"></script>
 
   <!-- 设置图片为全屏背景 -->
-  <img id="myImage" src="backgrounds/background9.jpg" alt="Background" class="fullscreen-image">
+  <img id="myImage" src="backgrounds/background13.jpg" alt="Background" class="fullscreen-image">
   
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
     <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
