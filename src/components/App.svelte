@@ -67,19 +67,19 @@
     pagewidth = window.innerWidth;
 
     // 闪念胶囊位置的动态计算
-    snjntop = topPosition + (height * 0.5) - iconsize * 0.5;
+    snjntop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
     snjnleft = (width * 0.01);
 
     // 日历位置的动态计算
-    rltop = topPosition + (height * 0.5) - iconsize * 0.5;
+    rltop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
     rlleft = snjnleft + iconsize + (width * 0.01); // 确保在闪念胶囊右边且不会重合
 
     // 桌面设置图标位置的动态计算
-    zmsztop = topPosition + (height * 0.5) - iconsize * 0.5;
+    zmsztop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
     zmszright = (width * 0.01);
 
     // 天气位置的动态计算
-    tqtop = topPosition + (height * 0.5) - iconsize * 0.5;
+    tqtop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
     tqright = zmszright + iconsize + (width * 0.01); // 确保在桌面设置左边且不会重合
 
     // 日历和天气组件的长宽动态计算
@@ -230,7 +230,7 @@
   <script src="jspack/rainyday.min.js"></script>
 
   <!-- 设置图片为全屏背景 -->
-  <img id="myImage" src="backgrounds/background4.jpg" alt="Background" class="fullscreen-image">
+  <img id="myImage" src="backgrounds/background17.jpg" alt="Background" class="fullscreen-image">
   
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
     <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
@@ -247,12 +247,25 @@
       height="{rlheight}px"
       style="position: absolute; bottom: 1.25%; left: {rlwidth * 0.525}px;
       border-radius: 10px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-      background-color: rgba(210, 210, 210, 0.2);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(5px);"
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
       viewBox="0 0 {rlwidth} {rlheight}"
       in:fly={{y: 500, duration: 1000}}
+      out:fly={{y: 300, duration: 300}}
+    >
+      <rect width="100%" height="100%" fill="transparent" />
+    </svg>
+  {/if}
+
+  <!-- 网页链接组件位置 -->
+  {#if !isVisible}
+    <svg
+      width="{pagewidth - rlwidth * 2 - rlwidth * 0.1}px"
+      height="{rlheight}px"
+      style="position: absolute; bottom: 1.25%; left: 50%; 
+      border-radius: 10px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
+      viewBox="0 0 {rlwidth} {rlheight}"
+      in:fly={{y: 500, duration: 800}}
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
@@ -312,7 +325,14 @@
     </div>
   </div> -->
 
-  
+  <!-- <div style="position: absolute; top: {rltop}px; left: {rlleft}px; transition: top 0.5s, left 0.5s; z-index: 1;">
+    <div transition:fly="{{ duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+      <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
+        <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
+      </button>
+    </div>
+  </div> -->
+
   <!-- 桌面设置图标按钮 -->
   {#if isVisible}
     <div style="position: absolute; top: {zmsztop}px; right: {zmszright}px; transition: top 0.5s, right 0.5s; z-index: 3;">
@@ -341,11 +361,6 @@
         </div>
     </div>
   {/if}
-
-  <!-- 按钮定位 -->
-  <div class="button-container" style="top: {buttonTopPosition}px; z-index: 3;">
-    <button class="button" on:click={toggleBoth}></button>
-  </div>
 
   <canvas id="rainCanvas"></canvas>
   <div id="rainEffectContainer"></div>
@@ -413,32 +428,6 @@
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
     transform: scale(1.02); /* 放大到原始尺寸的102% */
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 18px 36px rgba(0, 0, 0, 0.3); /* 加深并加长阴影 */
-  }
-
-  .button-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    transition: top 0.3s; /* 控制按钮随 SVG 移动的动画 */
-  }
-
-  .button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100px; /* 按钮宽度 */
-    height: 8px; /* 按钮高度 */
-    background-color: rgba(255, 255, 255, 0.15); /* 按钮初始背景颜色为白色半透明 */
-    color: #FFFFFF; /* 按钮文字颜色 */
-    border-radius: 4px; /* 圆角边框 */
-    border: none; /* 移除边框 */
-    cursor: pointer;
-    transition: background-color 0.5s, opacity 0.5s; /* 添加透明度的过渡效果 */
-    z-index: 3;
-  }
-
-  .button:hover {
-    background-color: rgba(255, 255, 255, 0.35); /* 鼠标悬停时的背景颜色为白色，透明度降低（更不透明） */
   }
 
   #icon-container {
