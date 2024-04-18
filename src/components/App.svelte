@@ -388,7 +388,7 @@
   /* 设置字体 */
   @font-face {
     font-family: 'Smartisan Compact';
-    src: url('smartisanWebsite/static/Smartisan_Compact-Medium.ttf') format('truetype');
+    src: url('/smartisanWebsite/static/Smartisan_Compact-Medium.ttf') format('truetype');
     font-weight: medium; /* 根据字体的实际权重来设置 */
     font-style: normal;
   }
