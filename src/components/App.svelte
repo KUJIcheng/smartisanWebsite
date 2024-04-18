@@ -10,15 +10,21 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活false
+  let rain = false; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
+  // 日历的位置
+  let rltop, rlleft;
+
   // 桌面设置的位置
   let zmsztop, zmszright;
+
+  // 天气的位置
+  let tqtop, tqright;
 
   // 搜索栏的上下高度
   let searchbarheight;
@@ -27,6 +33,9 @@
   let searchContainerTop = '40%'; // 初始位置为40%
   let searchContainerLeft = '48.4%';
   let buttonTopPosition; // 按钮的顶部位置
+
+  // 日历组件的长宽
+  let rlwidth, rlheight;
 
   onMount(() => {
     calculateSizeAndPosition();
@@ -50,7 +59,7 @@
     height = pageHeight * svgCoverPercentage; // 根据比例计算高度
     topPosition = pageHeight * (1 - svgCoverPercentage); // 计算顶部位置
     buttonTopPosition = topPosition + 5; // SVG顶部位置下方5px
-    iconsize = height * 0.7
+    iconsize = pageHeight * 0.07
     searchbarheight = window.innerHeight * 0.03
 
     // 页面的高度和宽度的追踪
@@ -61,9 +70,21 @@
     snjntop = topPosition + (height * 0.5) - iconsize * 0.5;
     snjnleft = (width * 0.01);
 
+    // 日历位置的动态计算
+    rltop = topPosition + (height * 0.5) - iconsize * 0.5;
+    rlleft = snjnleft + iconsize + (width * 0.01); // 确保在闪念胶囊右边且不会重合
+
     // 桌面设置图标位置的动态计算
     zmsztop = topPosition + (height * 0.5) - iconsize * 0.5;
     zmszright = (width * 0.01);
+
+    // 天气位置的动态计算
+    tqtop = topPosition + (height * 0.5) - iconsize * 0.5;
+    tqright = zmszright + iconsize + (width * 0.01); // 确保在桌面设置左边且不会重合
+
+    // 日历和天气组件的长宽动态计算
+    rlwidth = window.innerHeight * 0.475;
+    rlheight = window.innerHeight * 0.475;
   }
 
   // 处理鼠标滚轮事件的函数
@@ -209,7 +230,7 @@
   <script src="jspack/rainyday.min.js"></script>
 
   <!-- 设置图片为全屏背景 -->
-  <img id="myImage" src="backgrounds/background13.jpg" alt="Background" class="fullscreen-image">
+  <img id="myImage" src="backgrounds/background4.jpg" alt="Background" class="fullscreen-image">
   
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
     <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
@@ -219,6 +240,42 @@
     <rect width={width} height={height} fill="transparent"/>
   </svg>
 
+  <!-- 日历组件位置 -->
+  {#if !isVisible}
+    <svg
+      width="{rlwidth}px" 
+      height="{rlheight}px"
+      style="position: absolute; bottom: 1.25%; left: {rlwidth * 0.525}px;
+      border-radius: 10px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+      background-color: rgba(210, 210, 210, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(5px);"
+      viewBox="0 0 {rlwidth} {rlheight}"
+      in:fly={{y: 500, duration: 1000}}
+      out:fly={{y: 300, duration: 300}}
+    >
+      <rect width="100%" height="100%" fill="transparent" />
+    </svg>
+  {/if}
+
+  <!-- 天气组件位置 -->
+  {#if !isVisible}
+    <svg
+      width="{rlwidth}px" 
+      height="{rlheight}px"
+      style="position: absolute; bottom: 1.25%; left: {width - rlwidth * 0.525}px; 
+      border-radius: 10px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
+      viewBox="0 0 {rlwidth} {rlheight}"
+      in:fly={{y: 500, duration: 1000}}
+      out:fly={{y: 300, duration: 300}}
+    >
+      <rect width="100%" height="100%" fill="transparent" />
+    </svg>
+  {/if}
+
+  <!-- 闪念胶囊图标按钮 -->
   {#if isVisible}
     <div style="position: absolute; top: {snjntop}px; left: {snjnleft}px; transition: top 0.5s, left 0.5s; z-index: 3;">
         <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
@@ -236,6 +293,27 @@
     </svg>
   </div>
 
+  <!-- 日历图标按钮 -->
+  {#if isVisible}
+    <div style="position: absolute; top: {rltop}px; left: {rlleft}px; transition: top 0.5s, left 0.5s; z-index: 1;">
+        <div transition:fly="{{ y: 40, duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+          <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
+            <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
+          </button>
+        </div>
+    </div>
+  {/if}
+  
+  <!-- <div style="position: absolute; top: {rlheight}px; left: {rlwidth * 0.525 - iconsize * 0.5}px; transition: top 0.5s, left 0.5s; z-index: 1;">
+    <div transition:fly="{{ y: 40, duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+      <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
+        <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
+      </button>
+    </div>
+  </div> -->
+
+  
+  <!-- 桌面设置图标按钮 -->
   {#if isVisible}
     <div style="position: absolute; top: {zmsztop}px; right: {zmszright}px; transition: top 0.5s, right 0.5s; z-index: 3;">
         <div transition:fly="{{ y: 40, duration: 300 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
@@ -252,6 +330,17 @@
         <rect width="100%" height="100%" fill="transparent"/>
     </svg>
   </div>
+
+  <!-- 天气图标按钮 -->
+  {#if isVisible}
+    <div style="position: absolute; top: {tqtop}px; right: {tqright}px; transition: top 0.5s, right 0.5s; z-index: 1;">
+        <div transition:fly="{{ y: 40, duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+          <button type="button" on:click={togglesettingbar} style="background: none; border: none; padding: 0; cursor: pointer;">
+            <img src="icons/weather.png" alt="桌面设置图标" style="width: 100%; height: 100%;" />
+          </button>
+        </div>
+    </div>
+  {/if}
 
   <!-- 按钮定位 -->
   <div class="button-container" style="top: {buttonTopPosition}px; z-index: 3;">
