@@ -10,21 +10,29 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = false; // 控制雨滴效果是否激活false
+  let rain = true; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
-  // 日历的位置
-  let rltop, rlleft;
-
   // 桌面设置的位置
   let zmsztop, zmszright;
 
+  // 日历的位置
+  let rltop, rlleft;
+  // 日历下方位置
+  let rldowntop, rldownleft;
+  // 日历上方位置
+  let rluptop, rlupleft;
+
   // 天气的位置
   let tqtop, tqright;
+  // 天气下方位置
+  let tqdowntop, tqdownright;
+  // 天气上方位置
+  let tquptop, tqupright;
 
   // 搜索栏的上下高度
   let searchbarheight;
@@ -70,21 +78,35 @@
     snjntop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
     snjnleft = (width * 0.01);
 
-    // 日历位置的动态计算
-    rltop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
-    rlleft = snjnleft + iconsize + (width * 0.01); // 确保在闪念胶囊右边且不会重合
-
     // 桌面设置图标位置的动态计算
     zmsztop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
     zmszright = (width * 0.01);
 
-    // 天气位置的动态计算
-    tqtop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
-    tqright = zmszright + iconsize + (width * 0.01); // 确保在桌面设置左边且不会重合
-
     // 日历和天气组件的长宽动态计算
     rlwidth = window.innerHeight * 0.475;
     rlheight = window.innerHeight * 0.475;
+
+    // 日历初始位置的动态计算
+    rltop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
+    rlleft = snjnleft + iconsize + (width * 0.01); // 确保在闪念胶囊右边且不会重合
+    // 日历下方位置的动态计算
+    rldowntop = rltop;
+    rldownleft = rlleft;
+    // 日历上方位置的动态计算
+    rluptop = rlheight;
+    rlupleft = rlwidth * 0.525 - iconsize * 0.5;
+
+    // 天气位置的动态计算
+    tqtop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
+    tqright = zmszright + iconsize + (width * 0.01); // 确保在桌面设置左边且不会重合
+    // 天气下方位置的动态计算
+    tqdowntop = tqtop;
+    tqdownright = tqright;
+    // 天气上方位置的动态计算
+    tquptop = rlheight;
+    tqupright = rlwidth * 0.525 - iconsize * 0.5;
+
+    toggleRLTQ() // 重新计算日历和天气的位置
   }
 
   // 处理鼠标滚轮事件的函数
@@ -131,6 +153,21 @@
     showSidebar = false; // 闪念胶囊页面收回
     showSettingbar = false; // 桌面设置页面收回
     searchContainerLeft = '48.4%' // 搜索框归位
+    toggleRLTQ() // 日历图标的移动
+  }
+
+  function toggleRLTQ() {
+    if (isVisible) {
+      rltop = rldowntop;
+      rlleft = rldownleft;
+      tqtop = tqdowntop;
+      tqright = tqdownright;
+    } else {
+      rltop = rluptop;
+      rlleft = rlupleft;
+      tqtop = tquptop;
+      tqright = tqupright;
+    }
   }
 
   // 雨滴效果的function范围
@@ -306,33 +343,6 @@
     </svg>
   </div>
 
-  <!-- 日历图标按钮 -->
-  {#if isVisible}
-    <div style="position: absolute; top: {rltop}px; left: {rlleft}px; transition: top 0.5s, left 0.5s; z-index: 1;">
-        <div transition:fly="{{ y: 40, duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
-          <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
-            <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
-          </button>
-        </div>
-    </div>
-  {/if}
-  
-  <!-- <div style="position: absolute; top: {rlheight}px; left: {rlwidth * 0.525 - iconsize * 0.5}px; transition: top 0.5s, left 0.5s; z-index: 1;">
-    <div transition:fly="{{ y: 40, duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
-      <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
-        <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
-      </button>
-    </div>
-  </div> -->
-
-  <!-- <div style="position: absolute; top: {rltop}px; left: {rlleft}px; transition: top 0.5s, left 0.5s; z-index: 1;">
-    <div transition:fly="{{ duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
-      <button type="button" on:click={toggleSidebar} style="background: none; border: none; padding: 0; cursor: pointer;">
-        <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
-      </button>
-    </div>
-  </div> -->
-
   <!-- 桌面设置图标按钮 -->
   {#if isVisible}
     <div style="position: absolute; top: {zmsztop}px; right: {zmszright}px; transition: top 0.5s, right 0.5s; z-index: 3;">
@@ -351,16 +361,23 @@
     </svg>
   </div>
 
-  <!-- 天气图标按钮 -->
-  {#if isVisible}
-    <div style="position: absolute; top: {tqtop}px; right: {tqright}px; transition: top 0.5s, right 0.5s; z-index: 1;">
-        <div transition:fly="{{ y: 40, duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
-          <button type="button" on:click={togglesettingbar} style="background: none; border: none; padding: 0; cursor: pointer;">
-            <img src="icons/weather.png" alt="桌面设置图标" style="width: 100%; height: 100%;" />
-          </button>
-        </div>
+  <!-- 日历初始位置 -->
+  <div style="position: absolute; top: {rltop}px; left: {rlleft}px; transition: top 0.5s, left 0.5s; z-index: 1;">
+    <div transition:fly="{{ duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+      <button type="button" on:click={toggleBoth} style="background: none; border: none; padding: 0; cursor: pointer;">
+        <img src="icons/calender.png" alt="日历图标" style="width: 100%; height: 100%;" />
+      </button>
     </div>
-  {/if}
+  </div>
+
+  <!-- 天气初始位置 -->
+  <div style="position: absolute; top: {tqtop}px; right: {tqright}px; transition: top 0.5s, right 0.5s; z-index: 1;">
+    <div transition:fly="{{ duration: 500 }}" id="icon-container" style="width: {iconsize}px; height: {iconsize}px;">
+      <button type="button" on:click={toggleBoth} style="background: none; border: none; padding: 0; cursor: pointer;">
+        <img src="icons/weather.png" alt="桌面设置图标" style="width: 100%; height: 100%;" />
+      </button>
+    </div>
+  </div>
 
   <canvas id="rainCanvas"></canvas>
   <div id="rainEffectContainer"></div>
@@ -478,7 +495,7 @@
     width: 100vw;
     height: 100vh;
     pointer-events: none;
-    z-index: 0; /* 根据你页面的其他元素调整这个值 */
+    z-index: 0;
   }
 
   #rainEffectContainer {
