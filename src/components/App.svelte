@@ -385,10 +385,19 @@
 </main>
 
 <style>
+  /* 设置字体 */
+  @font-face {
+    font-family: 'Smartisan Compact';
+    src: url('Smartisan_Compact-Medium.ttf') format('truetype');
+    font-weight: medium; /* 根据字体的实际权重来设置 */
+    font-style: normal;
+  }
+
   /* 全局样式修改 */
   :global(body) {
     margin: 0; /* 移除默认边距 */
     overflow: hidden; /* 隐藏滚动条 */
+    font-family: 'Smartisan Compact', sans-serif; /* 作为回退，这里还包括了一个常见的字体 */
   }
   
   /* 背景图像样式，确保全屏显示且覆盖整个视口 */
@@ -434,6 +443,7 @@
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(0, 0, 0, 0.2); /* 同样的阴影效果 */
     color: #000; /* 文字颜色 */
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* 添加平滑过渡效果 */
+    font-family: 'Smartisan Compact', sans-serif; /* 应用自定义字体 */
   }
 
   .search-input:hover {
@@ -445,6 +455,12 @@
     background-color: rgba(255, 255, 255, 0.75); /* 聚焦时背景更透明 */
     transform: scale(1.02); /* 放大到原始尺寸的102% */
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 18px 36px rgba(0, 0, 0, 0.3); /* 加深并加长阴影 */
+  }
+
+  .search-input::placeholder {
+    color: rgba(0, 0, 0, 0.5); /* 调整 placeholder 文字颜色，使其更淡 */
+    font-family: 'Smartisan Compact', sans-serif; /* 确保使用自定义字体 */
+    opacity: 1; /* 修复某些浏览器中透明度的问题 */
   }
 
   #icon-container {
