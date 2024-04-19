@@ -264,10 +264,10 @@
 
 <main>
   <!-- 引入RainyDay.js库 -->
-  <script src="jspack/rainyday.min.js"></script>
+  <script src="/smartisanWebsite/jspack/rainyday.min.js"></script>
 
   <!-- 设置图片为全屏背景 -->
-  <img id="myImage" src="backgrounds/background17.jpg" alt="Background" class="fullscreen-image">
+  <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
   
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
     <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
@@ -286,7 +286,7 @@
       border-radius: 10px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
       viewBox="0 0 {rlwidth} {rlheight}"
-      in:fly={{y: 500, duration: 1000}}
+      in:fly={{y: 500, duration: 800}}
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
@@ -302,7 +302,7 @@
       border-radius: 10px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
       viewBox="0 0 {rlwidth} {rlheight}"
-      in:fly={{y: 500, duration: 800}}
+      in:fly={{y: 500, duration: 1000}}
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
@@ -318,7 +318,7 @@
       border-radius: 10px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
       viewBox="0 0 {rlwidth} {rlheight}"
-      in:fly={{y: 500, duration: 1000}}
+      in:fly={{y: 500, duration: 800}}
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
@@ -388,7 +388,7 @@
   /* 设置字体 */
   @font-face {
     font-family: 'Smartisan Compact';
-    src: url('/smartisanWebsite/static/Smartisan_Compact-Medium.ttf') format('truetype');
+    src: url('/Smartisan_Compact-Medium.ttf') format('truetype');
     font-weight: medium; /* 根据字体的实际权重来设置 */
     font-style: normal;
   }
