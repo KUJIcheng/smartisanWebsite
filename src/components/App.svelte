@@ -264,7 +264,7 @@
 
 <main>
   <!-- 引入RainyDay.js库 -->
-  <script src="/rainyday.min.js"></script>
+  <script src="/jspack/rainyday.min.js"></script>
 
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
