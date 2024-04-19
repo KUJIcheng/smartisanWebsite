@@ -203,7 +203,7 @@
     rainDiv.style.zIndex = "0";  // 和下雨canvas同一层
 
     // 实例化雨滴在玻璃上的效果
-    var rainyDay = new RainyDay({
+    const rainyDay = new RainyDay({
       image: 'myImage',  // 图像的ID
       parentElement: rainDiv,
       blur: 10, // 失效的内容
