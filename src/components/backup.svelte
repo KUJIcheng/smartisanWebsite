@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { fly } from 'svelte/transition';
 
   let height, width, topPosition, iconsize;
@@ -10,17 +10,22 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活false
+  let rain = false; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
-  // let RainyDay;
+  // 时钟组件
+  let currentTime = new Date().toLocaleTimeString();
+  let interval;
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
   // 桌面设置的位置
   let zmsztop, zmszright;
+
+  // 时钟的高度
+  let clocktop;
 
   // 日历的位置
   let rltop, rlleft;
@@ -41,18 +46,21 @@
 
   let svgCoverPercentage = 0.1; // 初始覆盖10%页面
   let searchContainerTop = '40%'; // 初始位置为40%
-  let searchContainerLeft = '48.4%';
+  let searchContainerLeft = '50%';
   let buttonTopPosition; // 按钮的顶部位置
 
   // 日历组件的长宽
   let rlwidth, rlheight;
 
-  onMount(async () => {
+  onMount(() => {
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
     window.addEventListener('wheel', handleWheel);
 
-    // ({ default: RainyDay } = await import('$lib/rainyday.min'));
+    // 初始化时钟更新定时器
+    interval = setInterval(() => {
+      currentTime = new Date().toLocaleTimeString(); // 每秒更新时间
+    }, 1000);
 
     // 基于rain判断是否下雨
     if (rain) {
@@ -60,6 +68,7 @@
     }
 
     return () => {
+      clearInterval(interval); // 清除时钟定时器
       window.removeEventListener('resize', calculateSizeAndPosition);
       window.removeEventListener('wheel', handleWheel); // 确保在组件销毁时移除事件监听器
     };
@@ -86,6 +95,9 @@
     zmsztop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
     zmszright = (width * 0.01);
 
+    // 时钟位置的动态计算
+    clocktop = topPosition + pageHeight * 0.05;
+
     // 日历和天气组件的长宽动态计算
     rlwidth = window.innerHeight * 0.475;
     rlheight = window.innerHeight * 0.475;
@@ -111,6 +123,11 @@
     tqupright = rlwidth * 0.525 - iconsize * 0.5;
 
     toggleRLTQ() // 重新计算日历和天气的位置
+    // 改变页面比例时恢复初始位置
+    showSidebar = false;
+    showSettingbar = false;
+    searchContainerTop = '40%';
+    searchContainerLeft = '50%';
   }
 
   // 处理鼠标滚轮事件的函数
@@ -138,7 +155,7 @@
   // 更改闪念胶囊页面是否出现
   function toggleSidebar() {
     showSidebar = !showSidebar;
-    searchContainerLeft = searchContainerLeft === '48.4%' ? '65%' : '48.4%';
+    searchContainerLeft = searchContainerLeft === '50%' ? '65%' : '50%';
     snjntop = snjntop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     snjnleft = snjnleft === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -146,7 +163,7 @@
   // 更改桌面设置页面是否出现
   function togglesettingbar() {
     showSettingbar = !showSettingbar;
-    searchContainerLeft = searchContainerLeft === '48.4%' ? '35%' : '48.4%';
+    searchContainerLeft = searchContainerLeft === '50%' ? '35%' : '50%';
     zmsztop = zmsztop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     zmszright = zmszright === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -156,7 +173,7 @@
     toggleVisibility(); // 控制图标的显示和隐藏
     showSidebar = false; // 闪念胶囊页面收回
     showSettingbar = false; // 桌面设置页面收回
-    searchContainerLeft = '48.4%' // 搜索框归位
+    searchContainerLeft = '50%' // 搜索框归位
     toggleRLTQ() // 日历图标的移动
   }
 
@@ -226,6 +243,11 @@
     rainyDay.rain([[1, 0, 20], [3, 3, 1]], 50); // [[1, 0, 20], [3, 3, 1]], 50
   }
 
+  function startdroplet() {
+    // 雨滴滴在玻璃上的效果
+    rainyDay.rain([[1, 0, 20], [3, 3, 1]], 50); // [[1, 0, 20], [3, 3, 1]], 50
+  }
+
   function stopRain() {
     // 清空雨滴数组，停止动画
     droplets = [];
@@ -270,12 +292,16 @@
   <!-- 引入RainyDay.js库 -->
   <script src="pack/rainyday.min.js" defer></script>
   
-
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
-  
+
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
-    <input class="search-input" placeholder="Search..." style="height: {searchbarheight}px; font-size: {searchbarheight * 0.75}px; border-radius: {searchbarheight * 100}px; padding: {searchbarheight * 0.5}px {searchbarheight * 1}px;" />
+    <input class="search-input" placeholder="Search..." 
+           style="height: {searchbarheight}px; 
+                  font-size: {searchbarheight * 0.75}px; 
+                  border-radius: {searchbarheight * 100}px; 
+                  padding: {searchbarheight * 0.5}px {searchbarheight * 0}px;
+                  text-indent: {searchbarheight * 1}px;">
   </div>
 
   <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%); transition: height 0.3s, top 0.3s;" viewBox="0 0 {width} {height}">
@@ -387,6 +413,14 @@
   <canvas id="rainCanvas"></canvas>
   <div id="rainEffectContainer"></div>
 
+  {#if isVisible}
+    <div style="position: absolute; top: {clocktop}px; left: 50%; transform: translateX(-50%); transition: top 0.5s, left 0.5s; z-index: 3;">
+        <div transition:fly="{{ y: 40, duration: 300 }}" id="clock-container">
+          <div class="clock" style="font-size: {height * 0.03}rem;">{currentTime}</div>
+        </div>
+    </div>
+  {/if}
+
 </main>
 
 <style>
@@ -434,7 +468,7 @@
     top: 20%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 36%;
+    width: 38%;
     transition: top 0.3s, left 0.3s;
   }
 
@@ -527,5 +561,12 @@
     height: 100vh;
     z-index: 1; /* 确保这个div在背景之上，但在其他UI组件之下 */
     pointer-events: none; /* 允许鼠标事件穿透到下层元素 */
+  }
+
+  .clock {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.7); /* 字体颜色 */
+    background-color: rgba(0, 0, 0, 0); /* 背景颜色 */
   }
 </style>
