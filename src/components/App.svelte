@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
 
   let height, width, topPosition, iconsize;
@@ -10,7 +10,7 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = false; // 控制雨滴效果是否激活false
+  let rain = true; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
@@ -88,11 +88,11 @@
     pagewidth = window.innerWidth;
 
     // 闪念胶囊位置的动态计算
-    snjntop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
+    snjntop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
     snjnleft = (width * 0.01);
 
     // 桌面设置图标位置的动态计算
-    zmsztop = topPosition + (pageHeight * 0.05) - iconsize * 0.5;
+    zmsztop = pageheight * 0.9 + (pageheight * 0.05) - iconsize * 0.5;
     zmszright = (width * 0.01);
 
     // 时钟位置的动态计算
@@ -126,7 +126,6 @@
     // 改变页面比例时恢复初始位置
     showSidebar = false;
     showSettingbar = false;
-    searchContainerTop = '40%';
     searchContainerLeft = '50%';
   }
 
