@@ -50,30 +50,6 @@
     window.addEventListener('resize', calculateSizeAndPosition);
     window.addEventListener('wheel', handleWheel);
 
-    // const rainDiv = document.getElementById('rainEffectContainer');
-    // // 确保div是全屏的
-    // rainDiv.style.width = "100vw";
-    // rainDiv.style.height = "100vh";
-    // rainDiv.style.position = "fixed";
-    // rainDiv.style.top = "0";
-    // rainDiv.style.left = "0";
-    // rainDiv.style.zIndex = "0";  // 和下雨canvas同一层
-
-    // const rainyDay = new RainyDay({
-    //   image: 'myImage',  // 图像的ID
-    //   parentElement: rainDiv,
-    //   blur: 10, // 失效的内容
-    //   enableSizeChange: true,
-    //   crop: {
-    //     x: 16,
-    //     y: 10,
-    //     w: 200,
-    //     h: 100
-    //   },
-    //   gravityThreshold: 5,
-    //   fps: 100
-    // });
-
     // 基于rain判断是否下雨
     if (rain) {
       startRain();
@@ -243,7 +219,12 @@
     });
 
     // 雨滴滴在玻璃上的效果
-    // rainyDay.rain([[1, 0, 20], [3, 3, 1]], 50); // [[1, 0, 20], [3, 3, 1]], 50
+    rainyDay.rain([[1, 0, 20], [3, 3, 1]], 50); // [[1, 0, 20], [3, 3, 1]], 50
+  }
+
+  function startdroplet() {
+    // 雨滴滴在玻璃上的效果
+    rainyDay.rain([[1, 0, 20], [3, 3, 1]], 50); // [[1, 0, 20], [3, 3, 1]], 50
   }
 
   function stopRain() {
@@ -289,7 +270,7 @@
 <main>
   <!-- 引入RainyDay.js库 -->
   <script src="pack/rainyday.min.js" defer></script>
-
+  
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
   
