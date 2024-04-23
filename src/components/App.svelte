@@ -15,8 +15,11 @@
   let droplets = []; // 存储雨滴对象
 
   // 时钟组件
-  let currentTime = new Date().toLocaleTimeString();
-  let interval;
+  let currentTime = '';
+  let currentDate = '';
+  let currentDay = '';
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
@@ -52,15 +55,12 @@
   // 日历组件的长宽
   let rlwidth, rlheight;
 
-  onMount(() => {
+  onMount( async() => {
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
     window.addEventListener('wheel', handleWheel);
-
-    // 初始化时钟更新定时器
-    interval = setInterval(() => {
-      currentTime = new Date().toLocaleTimeString(); // 每秒更新时间
-    }, 1000);
+    // 时间组件的更新
+    updateDateTime();
 
     // 基于rain判断是否下雨
     if (rain) {
@@ -153,16 +153,26 @@
 
   // 更改闪念胶囊页面是否出现
   function toggleSidebar() {
-    showSidebar = !showSidebar;
-    searchContainerLeft = searchContainerLeft === '50%' ? '65%' : '50%';
+    if (showSidebar) {
+      showSidebar = !showSidebar;
+      searchContainerLeft = '50%'
+    } else {
+      showSidebar = !showSidebar;
+      searchContainerLeft = searchContainerLeft === '50%' ? '65%' : '50%';
+    }
     snjntop = snjntop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     snjnleft = snjnleft === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
 
   // 更改桌面设置页面是否出现
   function togglesettingbar() {
-    showSettingbar = !showSettingbar;
-    searchContainerLeft = searchContainerLeft === '50%' ? '35%' : '50%';
+    if (showSettingbar) {
+      showSettingbar = !showSettingbar;
+      searchContainerLeft = '50%'
+    } else {
+      showSettingbar = !showSettingbar;
+      searchContainerLeft = searchContainerLeft === '50%' ? '35%' : '50%';
+    }
     zmsztop = zmsztop === topPosition + (height * 0.5) - iconsize * 0.5 ? pageheight * 0.05 : topPosition + (height * 0.5) - iconsize * 0.5;
     zmszright = zmszright === (width * 0.01) ? (width * 0.15) - iconsize * 0.5 : (width * 0.01);
   }
@@ -262,7 +272,7 @@
         y: Math.random() * rainCanvas.height,
         size: Math.random() * 2 + 1, // 雨滴大小
         speed: Math.random() * 2 + 6 // 雨滴下落速度
-        });
+      });
     }
   }
 
@@ -285,6 +295,18 @@
       });
     requestAnimationFrame(animateRain);
   }
+
+  // 时钟组件function：
+  function updateDateTime() {
+    const now = new Date();
+    currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    currentDate = `${months[now.getMonth()]} ${now.getDate()}`;
+    currentDay = days[now.getDay()];
+
+    // Ensure the UI updates
+    // In Svelte, assignments trigger DOM updates, so we need to call this function in a loop
+    requestAnimationFrame(updateDateTime);
+  }
 </script>
 
 <main>
@@ -303,9 +325,24 @@
                   text-indent: {searchbarheight * 1}px;">
   </div>
 
+  <!-- 底部承托组件平台 -->
   <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%); transition: height 0.3s, top 0.3s;" viewBox="0 0 {width} {height}">
     <rect width={width} height={height} fill="transparent"/>
   </svg>
+
+  {#if isVisible}
+    <div style="position: absolute; top: {clocktop}px; left: 48.4%; transform: translateX(-50%); transition: top 0.5s, left 0.5s; z-index: 3;">
+        <div transition:fly="{{ y: 40, duration: 300 }}" id="clock-container">
+          <!-- 时钟显示区 -->
+          <div class="clock" style="font-size: {height * 0.035}rem;">{currentTime}</div>
+          <!-- 日期和星期显示区 -->
+          <div class="date-info" style="font-size: {height * 0.01}rem; left: {height * 0.83}px; top: -{height * 0.3}px;">
+            <span class="day">{currentDay}</span>
+            <span class="date">{currentDate}</span>
+          </div>
+        </div>
+    </div>
+  {/if}
 
   <!-- 日历组件位置 -->
   {#if !isVisible}
@@ -411,14 +448,6 @@
 
   <canvas id="rainCanvas"></canvas>
   <div id="rainEffectContainer"></div>
-
-  {#if isVisible}
-    <div style="position: absolute; top: {clocktop}px; left: 50%; transform: translateX(-50%); transition: top 0.5s, left 0.5s; z-index: 3;">
-        <div transition:fly="{{ y: 40, duration: 300 }}" id="clock-container">
-          <div class="clock" style="font-size: {height * 0.03}rem;">{currentTime}</div>
-        </div>
-    </div>
-  {/if}
 
 </main>
 
@@ -567,5 +596,15 @@
     transform: translate(-50%, -50%);
     color: rgba(255, 255, 255, 0.7); /* 字体颜色 */
     background-color: rgba(0, 0, 0, 0); /* 背景颜色 */
+  }
+  .date-info {
+    display: flex;
+    flex-direction: column; /* 使内容垂直堆叠 */
+    position: absolute;
+    align-items: center; /* 垂直居中对齐子项 */
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .day, .date {
+    display: block; /* 上下排列 */
   }
 </style>
