@@ -10,7 +10,7 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活false
+  let rain = false; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
 
@@ -20,6 +20,9 @@
   let currentDay = '';
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // 天气组件
+  let weather = { temp: '', description: '', iconUrl: '' };
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
@@ -61,6 +64,10 @@
     window.addEventListener('wheel', handleWheel);
     // 时间组件的更新
     updateDateTime();
+
+    fetchWeatherData(weatherInfo => {
+      weather = weatherInfo;
+    });
 
     // 基于rain判断是否下雨
     if (rain) {
@@ -307,6 +314,50 @@
     // In Svelte, assignments trigger DOM updates, so we need to call this function in a loop
     requestAnimationFrame(updateDateTime);
   }
+
+  // 天气的动态获取function
+  async function fetchWeatherData(setWeather) {
+    const city = 'Shenzhen';  
+    const apiKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=fe4ef9fb1a3076d88704a1f3c2afe244&units=metric&lang=zh_cn`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      setWeather({
+        temp: `${Math.round(data.main.temp)}°C`,
+        description: data.weather[0].description,
+          iconUrl: `http://openweathermap.org/img/w/${data.weather[0].icon}.png`
+      });
+    } catch (error) {
+      console.error('Failed to fetch weather data:', error);
+      setWeather({ temp: 'N/A', description: 'No data available', iconUrl: '' });
+    }
+  }
+  // async function fetchWeatherData(setWeather) {
+  //   const lat = '22.5429';  // 深圳市纬度
+  //   const lon = '114.0596'; // 深圳市经度
+  //   const apiKey = '9421ac1bc479c3893346b8a5256623f9';
+  //   const excludeParts = 'minutely,hourly,daily,alerts';  // 根据需要排除不需要的数据部分
+
+  //   const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=${excludeParts}&appid=${apiKey}&units=metric&lang=zh_cn`;
+
+  //   try {
+  //     const response = await fetch(url);
+  //     if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  //     const data = await response.json();
+  //     setWeather({
+  //       temp: `${Math.round(data.current.temp)}°C`,
+  //       description: data.current.weather[0].description,
+  //       iconUrl: `http://openweathermap.org/img/wn/${data.current.weather[0].icon}.png`
+  //     });
+  //   } catch (error) {
+  //     console.error('Failed to fetch weather data:', error);
+  //     setWeather({ temp: 'N/A', description: '无数据', iconUrl: '' });
+  //   }
+  // }
 </script>
 
 <main>
@@ -330,6 +381,7 @@
     <rect width={width} height={height} fill="transparent"/>
   </svg>
 
+  <!-- 时钟组件 -->
   {#if isVisible}
     <div style="position: absolute; top: {clocktop}px; left: 48.4%; transform: translateX(-50%); transition: top 0.5s, left 0.5s; z-index: 3;">
         <div transition:fly="{{ y: 40, duration: 300 }}" id="clock-container">
@@ -389,6 +441,19 @@
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
+      <!-- 天气描述文本 -->
+      <!-- 城市名称 -->
+      <text x="50%" y="30%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.005}em">
+        深圳
+      </text>
+      <!-- 温度 -->
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.01}em">
+        {weather.temp}
+      </text>
+      <!-- 天气描述 -->
+      <text x="50%" y="70%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.005}em">
+        {weather.description}
+      </text>
     </svg>
   {/if}
 
