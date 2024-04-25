@@ -65,8 +65,13 @@
     // 时间组件的更新
     updateDateTime();
 
-    fetchWeatherData(weatherInfo => {
-      weather = weatherInfo;
+    navigator.geolocation.getCurrentPosition(async position => {
+        const { latitude, longitude } = position.coords;
+        await fetchWeatherData(weatherInfo => {
+            weather = weatherInfo;
+        }, latitude, longitude);
+    }, error => {
+        console.error('Error getting location', error);
     });
 
     // 基于rain判断是否下雨
@@ -315,47 +320,61 @@
     requestAnimationFrame(updateDateTime);
   }
 
-  // 天气的动态获取function
-  async function fetchWeatherData(setWeather) {
-    const city = 'Shenzhen';  
-    const apiKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=fe4ef9fb1a3076d88704a1f3c2afe244&units=metric&lang=zh_cn`;
+  async function fetchWeatherData(setWeather, lat, lon) {
+    const weatherKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
+    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,daily&appid=${weatherKey}&units=metric&lang=zh_cn`;
 
     try {
+      const cityName = await fetchCityName(lat, lon); // 获取城市名称
       const response = await fetch(url);
       const data = await response.json();
       setWeather({
-        temp: `${Math.round(data.main.temp)}°C`,
-        description: data.weather[0].description,
-          iconUrl: `http://openweathermap.org/img/w/${data.weather[0].icon}.png`
+        location: cityName, // 使用从 Google API 获取的城市名称
+        temp: `${Math.round(data.current.temp)}°C`,
+        description: data.current.weather[0].description,
+        iconUrl: `http://openweathermap.org/img/wn/${data.current.weather[0].icon}.png`
       });
     } catch (error) {
       console.error('Failed to fetch weather data:', error);
-      setWeather({ temp: 'N/A', description: 'No data available', iconUrl: '' });
+      setWeather({ location: '位置获取失败', temp: 'N/A', description: '无数据', iconUrl: '' });
     }
   }
-  // async function fetchWeatherData(setWeather) {
-  //   const lat = '22.5429';  // 深圳市纬度
-  //   const lon = '114.0596'; // 深圳市经度
-  //   const apiKey = '9421ac1bc479c3893346b8a5256623f9';
-  //   const excludeParts = 'minutely,hourly,daily,alerts';  // 根据需要排除不需要的数据部分
 
-  //   const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=${excludeParts}&appid=${apiKey}&units=metric&lang=zh_cn`;
+  async function fetchCityName(lat, lon) {
+    const mapKey = 'AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4'; // 使用您的 Google Maps API 密钥
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${mapKey}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+            const locality = data.results[0].address_components.find(component => component.types.includes('locality'));
+            return locality ? locality.long_name : '未知城市';
+        }
+        return '未知城市';
+    } catch (error) {
+        console.error('Failed to fetch city name:', error);
+        return '位置获取失败';
+    }
+  }
+
+  // // 天气的动态获取function
+  // async function fetchWeatherData(setWeather) {
+  //   const city = 'Shenzhen';  
+  //   const apiKey = 'xxx';
+  //   const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=fe4ef9fb1a3076d88704a1f3c2afe244&units=metric&lang=zh_cn`;
 
   //   try {
   //     const response = await fetch(url);
-  //     if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
   //     const data = await response.json();
   //     setWeather({
-  //       temp: `${Math.round(data.current.temp)}°C`,
-  //       description: data.current.weather[0].description,
-  //       iconUrl: `http://openweathermap.org/img/wn/${data.current.weather[0].icon}.png`
+  //       temp: `${Math.round(data.main.temp)}°C`,
+  //       description: data.weather[0].description,
+  //         iconUrl: `http://openweathermap.org/img/w/${data.weather[0].icon}.png`
   //     });
   //   } catch (error) {
   //     console.error('Failed to fetch weather data:', error);
-  //     setWeather({ temp: 'N/A', description: '无数据', iconUrl: '' });
+  //     setWeather({ temp: 'N/A', description: 'No data available', iconUrl: '' });
   //   }
   // }
 </script>
@@ -444,7 +463,7 @@
       <!-- 天气描述文本 -->
       <!-- 城市名称 -->
       <text x="50%" y="30%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.005}em">
-        深圳
+        {weather.location}
       </text>
       <!-- 温度 -->
       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.01}em">
@@ -662,6 +681,7 @@
     color: rgba(255, 255, 255, 0.7); /* 字体颜色 */
     background-color: rgba(0, 0, 0, 0); /* 背景颜色 */
   }
+
   .date-info {
     display: flex;
     flex-direction: column; /* 使内容垂直堆叠 */
