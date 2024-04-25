@@ -314,25 +314,27 @@
     currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     currentDate = `${months[now.getMonth()]} ${now.getDate()}`;
     currentDay = days[now.getDay()];
-
-    // Ensure the UI updates
-    // In Svelte, assignments trigger DOM updates, so we need to call this function in a loop
     requestAnimationFrame(updateDateTime);
   }
 
   async function fetchWeatherData(setWeather, lat, lon) {
     const weatherKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
-    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,daily&appid=${weatherKey}&units=metric&lang=zh_cn`;
-
+    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
     try {
       const cityName = await fetchCityName(lat, lon); // 获取城市名称
       const response = await fetch(url);
       const data = await response.json();
+
+      const sunriseTime = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sunsetTime = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
       setWeather({
         location: cityName, // 使用从 Google API 获取的城市名称
         temp: `${Math.round(data.current.temp)}°C`,
-        description: data.current.weather[0].description,
-        iconUrl: `http://openweathermap.org/img/wn/${data.current.weather[0].icon}.png`
+        feels_like: `${Math.round(data.current.feels_like)}°C`,
+        sunrise: sunriseTime,
+        sunset: sunsetTime,
+        description: data.current.weather[0].description
       });
     } catch (error) {
       console.error('Failed to fetch weather data:', error);
@@ -341,42 +343,30 @@
   }
 
   async function fetchCityName(lat, lon) {
-    const mapKey = 'AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4'; // 使用您的 Google Maps API 密钥
+    const mapKey = 'AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4';
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${mapKey}`;
-
+    
     try {
         const response = await fetch(url);
         const data = await response.json();
         if (data.results && data.results.length > 0) {
-            const locality = data.results[0].address_components.find(component => component.types.includes('locality'));
-            return locality ? locality.long_name : '未知城市';
+            const addressComponents = data.results[0].address_components;
+            const locality = addressComponents.find(component => component.types.includes('locality'));
+            const sublocality = addressComponents.find(component =>  component.types.includes('neighborhood'));
+
+            let locationName = locality ? locality.long_name : '未知城市';
+            if (sublocality) {
+                locationName += `, ${sublocality.long_name}`;
+            }
+
+            return locationName;
         }
-        return '未知城市';
+        return '未知位置';
     } catch (error) {
         console.error('Failed to fetch city name:', error);
         return '位置获取失败';
     }
   }
-
-  // // 天气的动态获取function
-  // async function fetchWeatherData(setWeather) {
-  //   const city = 'Shenzhen';  
-  //   const apiKey = 'xxx';
-  //   const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=fe4ef9fb1a3076d88704a1f3c2afe244&units=metric&lang=zh_cn`;
-
-  //   try {
-  //     const response = await fetch(url);
-  //     const data = await response.json();
-  //     setWeather({
-  //       temp: `${Math.round(data.main.temp)}°C`,
-  //       description: data.weather[0].description,
-  //         iconUrl: `http://openweathermap.org/img/w/${data.weather[0].icon}.png`
-  //     });
-  //   } catch (error) {
-  //     console.error('Failed to fetch weather data:', error);
-  //     setWeather({ temp: 'N/A', description: 'No data available', iconUrl: '' });
-  //   }
-  // }
 </script>
 
 <main>
@@ -461,18 +451,29 @@
     >
       <rect width="100%" height="100%" fill="transparent" />
       <!-- 天气描述文本 -->
+      <image href="weathericon/cloudy_sunny_color.png" x="3%" y="17%" width="50%" height="50%"/>
       <!-- 城市名称 -->
-      <text x="50%" y="30%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.005}em">
+      <text x="50%" y="15%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.0035}em">
         {weather.location}
       </text>
       <!-- 温度 -->
-      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.01}em">
+      <text x="57%" y="35%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.008}em">
         {weather.temp}
       </text>
       <!-- 天气描述 -->
-      <text x="50%" y="70%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.005}em">
+      <text x="57%" y="45%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.003}em">
         {weather.description}
       </text>
+      <!-- 体感温度 -->
+      <text x="57%" y="53%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
+        体感温度: {weather.feels_like}
+      </text>
+      <!-- 日出日落时间 -->
+      <text x="57%" y="58%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
+        日出: {weather.sunrise} 日落: {weather.sunset}
+      </text>
+      <!-- 天气图标温度分割线 -->
+      <line x1="50%" y1="25%" x2="50%" y2="60%" stroke="rgba(255, 255, 255, 0.3)" stroke-width="0.5%"/>
     </svg>
   {/if}
 
