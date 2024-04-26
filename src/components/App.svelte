@@ -358,13 +358,19 @@
   async function fetchCityName(lat, lon) {
     const mapKey = 'AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4';
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${mapKey}`;
-    
+
+    // const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=22.333564,114.269492&key=AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4`;
+    // const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=32.715736,-117.161087&key=AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4`;
+
     try {
         const response = await fetch(url);
         const data = await response.json();
         if (data.results && data.results.length > 0) {
             const addressComponents = data.results[0].address_components;
-            const locality = addressComponents.find(component => component.types.includes('locality'));
+            let locality = addressComponents.find(component => component.types.includes('locality'));
+            if (!locality) {
+                locality = addressComponents.find(component => component.types.includes('country'));
+            }
             const sublocality = addressComponents.find(component =>  component.types.includes('neighborhood'));
 
             let locationName = locality ? locality.long_name : '未知城市';
@@ -383,9 +389,7 @@
 </script>
 
 <main>
-  <!-- 引入RainyDay.js库 -->
-  <!-- <script src="pack/rainyday.min.js" defer></script> -->
-  
+
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
 
@@ -705,5 +709,6 @@
   }
   .day, .date {
     display: block; /* 上下排列 */
+    white-space: nowrap;
   }
 </style>
