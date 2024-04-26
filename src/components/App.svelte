@@ -10,9 +10,10 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = false; // 控制雨滴效果是否激活false
+  let rain = true; // 控制雨滴效果是否激活false
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
+  let rainyDay; // 雨滴效果的对象
 
   // 时钟组件
   let currentTime = '';
@@ -73,6 +74,8 @@
     }, error => {
         console.error('Error getting location', error);
     });
+
+    await loadScript('/rainyday.min.js');
 
     // 基于rain判断是否下雨
     if (rain) {
@@ -308,6 +311,16 @@
     requestAnimationFrame(animateRain);
   }
 
+  async function loadScript(url) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
   // 时钟组件function：
   function updateDateTime() {
     const now = new Date();
@@ -371,7 +384,7 @@
 
 <main>
   <!-- 引入RainyDay.js库 -->
-  <script src="pack/rainyday.min.js" defer></script>
+  <!-- <script src="pack/rainyday.min.js" defer></script> -->
   
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
