@@ -75,7 +75,7 @@
         console.error('Error getting location', error);
     });
 
-    await loadScript('/rainyday.min.js');
+    await loadScript('pack/rainyday.min.js');
 
     // 基于rain判断是否下雨
     if (rain) {
