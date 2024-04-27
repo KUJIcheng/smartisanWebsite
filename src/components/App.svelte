@@ -10,7 +10,7 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活false
+  let rain = true; // 控制雨滴效果是否激活
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
   let rainyDay; // 雨滴效果的对象
@@ -238,6 +238,10 @@
     // 开始绘制雨滴
     requestAnimationFrame(animateRain);
 
+    dropletEffect()
+  }
+
+  function dropletEffect() {
     const rainDiv = document.getElementById('rainEffectContainer');
     // 确保div是全屏的
     rainDiv.style.width = "100vw";
@@ -333,10 +337,17 @@
   async function fetchWeatherData(setWeather, lat, lon) {
     const weatherKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
     const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=22.333564&lon=114.269492&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=32.715736&lon=-117.161087&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+
     try {
       const cityName = await fetchCityName(lat, lon); // 获取城市名称
       const response = await fetch(url);
       const data = await response.json();
+
+      const currentTime = Date.now() / 1000;
+      const isDaytime = currentTime >= data.current.sunrise && currentTime <= data.current.sunset;
 
       const sunriseTime = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const sunsetTime = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -347,12 +358,88 @@
         feels_like: `${Math.round(data.current.feels_like)}°C`,
         sunrise: sunriseTime,
         sunset: sunsetTime,
-        description: data.current.weather[0].description
+        description: data.current.weather[0].description,
+        iconUrl: `weathericon/${chooseIconFileName(data.current.weather[0].id, isDaytime)}`
       });
     } catch (error) {
       console.error('Failed to fetch weather data:', error);
       setWeather({ location: '位置获取失败', temp: 'N/A', description: '无数据', iconUrl: '' });
     }
+  }
+
+  function chooseIconFileName(weatherId, isDaytime) {
+    const iconMapping = {
+        // Thunderstorm
+        200: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        201: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        202: "thunder_color.png",
+        210: "thunder_color.png",
+        211: "thunder_color.png",
+        212: "thunder_color.png",
+        221: "thunder_color.png",
+        230: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        231: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        232: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+
+        // Drizzle
+        300: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        301: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        302: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        310: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        311: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        312: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        313: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        314: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        321: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+
+        // Rain
+        500: "rain_light_color.png",
+        501: "rain_light_color.png",
+        502: "rain_heavy_color.png",
+        503: "rain_heavy_color.png",
+        504: "rain_heavy_color.png",
+        511: "rain_heavy_color.png",
+        520: "rain_sunny_color.png",
+        521: "rain_sunny_color.png",
+        522: "rain_sunny_color.png",
+        531: "rain_sunny_color.png",
+
+        // Snow
+        600: "snowy_light_color.png",
+        601: "snowy_heavy_color.png",
+        602: "snowy_heavy_color.png",
+        611: "snowy_light_color.png",
+        612: "snowy_light_color.png",
+        613: "snowy_light_color.png",
+        615: "snowy_light_color.png",
+        616: "snowy_heavy_color.png",
+        620: "snowy_light_color.png",
+        621: "snowy_heavy_color.png",
+        622: "snowy_heavy_color.png",
+
+        // Atmosphere
+        701: isDaytime ? "sunny_foggy_color.png" : "foggy_night_color.png",
+        711: isDaytime ? "sunny_foggy_color.png" : "foggy_night_color.png",
+        721: "cloudy_foggy_color.png",
+        731: "cloudy_foggy_color.png",
+        741: "cloudy_foggy_color.png",
+        751: "cloudy_foggy_color.png",
+        761: isDaytime ? "sunny_foggy_color.png" : "foggy_night_color.png",
+        762: "cloudy_windy_color.png",
+        771: "windy_color.png",
+        781: "windy_color.png",
+
+        // Clear
+        800: isDaytime ? "sunny_color.png" : "night_color.png",
+
+        // Clouds
+        801: isDaytime ? "cloudy_sunny_color.png" : "cloudy_night_color.png",
+        802: isDaytime ? "cloudy_sunny_color.png" : "cloudy_night_color.png",
+        803: isDaytime ? "cloudy_foggy_sunny_color.png" : "cloudy_foggy_night__color.png",
+        804: "cloudy_foggy_color.png"
+    };
+
+    return iconMapping[weatherId] || "default_icon.png"; // default_icon.png 是当没有合适的图标时的后备选项
   }
 
   async function fetchCityName(lat, lon) {
@@ -468,7 +555,7 @@
     >
       <rect width="100%" height="100%" fill="transparent" />
       <!-- 天气描述文本 -->
-      <image href="weathericon/cloudy_sunny_color.png" x="3%" y="17%" width="50%" height="50%"/>
+      <image href="{weather.iconUrl}" x="3%" y="17%" width="50%" height="50%"/>
       <!-- 城市名称 -->
       <text x="50%" y="15%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.0035}em">
         {weather.location}
