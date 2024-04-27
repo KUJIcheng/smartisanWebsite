@@ -24,6 +24,14 @@
 
   // 天气组件
   let weather = { temp: '', description: '', iconUrl: '' };
+  let today = new Date().getDay(); // 获取今天是星期几的索引，0代表星期天
+  let forecastDays = []; // 存储接下来的天数标签
+
+  // 生成未来几天的标签
+  for (let i = 0; i < 5; i++) {
+    let dayIndex = (today + i) % 7; // 计算未来的天数索引
+    forecastDays.push(days[dayIndex]); // 添加到数组
+  }
 
   // 闪念胶囊的位置
   let snjntop, snjnleft;
@@ -352,6 +360,12 @@
       const sunriseTime = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const sunsetTime = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+      const dailyForecast = data.daily.slice(1, 6).map(day => ({
+        minTemp: Math.round(day.temp.min),
+        maxTemp: Math.round(day.temp.max),
+        icon: `weathericon/${chooseIconFileName(day.weather[0].id, isDaytime)}`
+      }));
+
       setWeather({
         location: cityName, // 使用从 Google API 获取的城市名称
         temp: `${Math.round(data.current.temp)}°C`,
@@ -359,7 +373,8 @@
         sunrise: sunriseTime,
         sunset: sunsetTime,
         description: data.current.weather[0].description,
-        iconUrl: `weathericon/${chooseIconFileName(data.current.weather[0].id, isDaytime)}`
+        iconUrl: `weathericon/${chooseIconFileName(data.current.weather[0].id, isDaytime)}`,
+        dailyForecast
       });
     } catch (error) {
       console.error('Failed to fetch weather data:', error);
@@ -578,6 +593,24 @@
       </text>
       <!-- 天气图标温度分割线 -->
       <line x1="50%" y1="25%" x2="50%" y2="60%" stroke="rgba(255, 255, 255, 0.3)" stroke-width="0.5%"/>
+      <!-- 接下来五天的天气预报 -->
+      {#each forecastDays as day, index}
+        <text 
+          x="{10 + index * 20}%"
+          y="69%" 
+          dominant-baseline="middle" 
+          text-anchor="middle" 
+          fill="rgba(255, 255, 255, 0.7)" 
+          font-size="{height * 0.002}em">
+          {day === days[today] ? 'Today' : day}
+        </text>
+      {/each}
+      {#each weather.dailyForecast as forecast, index}
+        <image href="{forecast.icon}" x="{4 + index * 20}%" y="75%" width="12%" height="12%" />
+        <text x="{10 + index * 20}%" y="92%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
+          {forecast.minTemp} / {forecast.maxTemp}
+        </text>
+      {/each}
     </svg>
   {/if}
 
