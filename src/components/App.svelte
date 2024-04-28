@@ -10,7 +10,7 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = true; // 控制雨滴效果是否激活
+  let rain = false; // 控制雨滴效果是否激活
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
   let rainyDay; // 雨滴效果的对象
@@ -26,13 +26,20 @@
   let weather = { temp: '', description: '', iconUrl: '' };
   let today = new Date().getDay(); // 获取今天是星期几的索引，0代表星期天
   let forecastDays = []; // 存储接下来的天数标签
-
   // 生成未来几天的标签
   for (let i = 0; i < 5; i++) {
     let dayIndex = (today + i) % 7; // 计算未来的天数索引
     forecastDays.push(days[dayIndex]); // 添加到数组
   }
 
+  // 日历组件
+  let currentFormattedDate = '';
+  const daysAbbreviated = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let currentMonthIndex = new Date().getMonth();
+  let currentYear = new Date().getFullYear();
+  let daysInMonth = [];
+
+  
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
@@ -73,6 +80,9 @@
     window.addEventListener('wheel', handleWheel);
     // 时间组件的更新
     updateDateTime();
+    // 日历的更新
+    updateCurrentFormattedDate();
+    updateCalendar();
 
     navigator.geolocation.getCurrentPosition(async position => {
         const { latitude, longitude } = position.coords;
@@ -488,6 +498,79 @@
         return '位置获取失败';
     }
   }
+
+  // 日历的function
+  function updateCurrentFormattedDate() {
+    currentFormattedDate = `${currentYear}年${currentMonthIndex + 1}月`;
+  }
+
+  function getMonthData(year, month) {
+    let startDay = new Date(year, month, 1).getDay();
+    let numDays = new Date(year, month + 1, 0).getDate();
+
+    // 计算上个月的天数
+    let prevMonthDays = month === 0 ? new Date(year - 1, 12, 0).getDate() : new Date(year, month, 0).getDate();
+    // 下个月的开始天数简单计算为1，因为我们从1号开始显示
+    let nextMonthStart = 1;  // 这里改为let
+    // 计算需要显示的上个月的天数
+    let displayPrevMonthDays = startDay;
+
+    return { startDay, numDays, prevMonthDays, nextMonthStart, displayPrevMonthDays };
+  }
+
+  function nextMonth() {
+    if (currentMonthIndex === 11) {
+      currentMonthIndex = 0;
+      currentYear++;
+    } else {
+      currentMonthIndex++;
+    }
+    updateCalendar();
+  }
+
+  function previousMonth() {
+    if (currentMonthIndex === 0) {
+      currentMonthIndex = 11;
+      currentYear--;
+    } else {
+      currentMonthIndex--;
+    }
+    updateCalendar();
+  }
+
+  function updateCalendar() {
+    const { startDay, numDays, prevMonthDays, nextMonthStart: initialNextMonthStart, displayPrevMonthDays } = getMonthData(currentYear, currentMonthIndex);
+    const today = new Date();
+    const todayDate = today.getDate();
+    const isCurrentMonth = today.getMonth() === currentMonthIndex && today.getFullYear() === currentYear;
+
+    // 计算所需的单元格总数
+    const totalCells = startDay + numDays; // 当月和上月剩余所需的总格数
+    daysInMonth = Array(totalCells > 35 ? 42 : 35).fill(null); // 如果超过35格则需要42格，否则只需35格
+
+    // 填充上月日期
+    for (let i = 0; i < displayPrevMonthDays; i++) {
+        daysInMonth[i] = { day: prevMonthDays - displayPrevMonthDays + i + 1, currentMonth: false, isToday: false };
+    }
+
+    // 填充当月日期
+    for (let i = 0; i < numDays; i++) {
+        daysInMonth[startDay + i] = { 
+            day: i + 1, 
+            currentMonth: true, 
+            isToday: isCurrentMonth && (i + 1) === todayDate // 标记今天的日期
+        };
+    }
+
+    // 如果需要，填充下月日期
+    let nextMonthStart = initialNextMonthStart;
+    let nextDaysFillStart = startDay + numDays;
+    for (let i = nextDaysFillStart; i < daysInMonth.length; i++) {
+        daysInMonth[i] = { day: nextMonthStart++, currentMonth: false, isToday: false };
+    }
+
+    updateCurrentFormattedDate(); // 更新顶部显示的当前年月
+  }
 </script>
 
 <main>
@@ -537,6 +620,61 @@
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
+      <!-- 当前年月显示 -->
+      <text x="50%" y="15%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.0035}em">
+        {currentFormattedDate}
+      </text>
+      <!-- 左侧按钮：上一个月 -->
+      <foreignObject x="10%" y="11%" width="7%" height="7%">
+        <button on:click={previousMonth} class="calendar-button">
+          <img src="smallicon/back.png" alt="Previous Month" style="width: 100%; height: auto;"/>
+        </button>
+      </foreignObject>
+      <!-- 右侧按钮：下一个月 -->
+      <foreignObject x="83%" y="11%" width="7%" height="7%">
+        <button on:click={nextMonth} class="calendar-button">
+          <img src="smallicon/forward.png" alt="Next Month" style="width: 100%; height: auto;"/>
+        </button>
+      </foreignObject>
+      {#each daysAbbreviated as day, index}
+        <text 
+          x="{6.25 + index * 12.5 + 6.25}%" 
+          y="21.5%" 
+          dominant-baseline="middle" 
+          text-anchor="middle" 
+          fill="rgba(255, 255, 255, 0.5)" 
+          font-size="{height * 0.0016}em">
+          {day}
+        </text>
+      {/each}
+      <!-- 绘制日历网格 -->
+      {#each Array(Math.ceil(daysInMonth.length / 7)) as _, row (row)}
+        {#each Array(7) as _, col (col)}
+          <rect
+            x="{6.25 + col * 12.5}%" 
+            y="{23 + row * 12.5}%" 
+            width="12.5%"
+            height="12.5%"
+            fill={
+              daysInMonth[row * 7 + col]?.isToday ? 'rgba(225, 225, 255, 0.6)' :
+              daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(225, 225, 255, 0.05)' : 'rgba(150, 150, 150, 0.5)'
+            }
+            stroke="rgba(255, 255, 255, 0.3)"
+            stroke-width="0.1%"
+          />
+          {#if daysInMonth[row * 7 + col]}
+            <text
+              x="{6.25 + col * 12.5 + 6.25}%" 
+              y="{23 + row * 12.5 + 6.25}%" 
+              dominant-baseline="middle" 
+              text-anchor="middle" 
+              fill={daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(255, 255, 255, 0.7)' : 'rgba(190, 190, 190, 0.7)'}
+              font-size="{height * 0.002}em">
+              {daysInMonth[row * 7 + col].day}
+            </text>
+          {/if}
+        {/each}
+      {/each}
     </svg>
   {/if}
 
@@ -570,7 +708,7 @@
     >
       <rect width="100%" height="100%" fill="transparent" />
       <!-- 天气描述文本 -->
-      <image href="{weather.iconUrl}" x="3%" y="17%" width="50%" height="50%"/>
+      <image href="{weather.iconUrl}" x="2%" y="17%" width="50%" height="50%"/>
       <!-- 城市名称 -->
       <text x="50%" y="15%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.0035}em">
         {weather.location}
@@ -606,7 +744,7 @@
         </text>
       {/each}
       {#each weather.dailyForecast as forecast, index}
-        <image href="{forecast.icon}" x="{4 + index * 20}%" y="75%" width="12%" height="12%" />
+        <image href="{forecast.icon}" x="{2.5 + index * 20}%" y="73%" width="15%" height="15%" />
         <text x="{10 + index * 20}%" y="92%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
           {forecast.minTemp} / {forecast.maxTemp}
         </text>
@@ -830,5 +968,28 @@
   .day, .date {
     display: block; /* 上下排列 */
     white-space: nowrap;
+  }
+
+  .calendar-button {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    transition: background-color 0.3s, transform 0.2s, opacity 0.3s;  /* 添加透明度变化的过渡效果 */
+  }
+
+  .calendar-button img {
+      opacity: 0.6; /* 初始图标透明度 */
+      transition: opacity 0.3s; /* 添加透明度变化的过渡效果 */
+  }
+
+  .calendar-button:hover img {
+      opacity: 0.9; /* 鼠标悬停时图标透明度 */
+  }
+
+  .calendar-button:active {
+      transform: scale(0.6); /* 点击时缩小图标 */
   }
 </style>

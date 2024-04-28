@@ -10,9 +10,10 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = false; // 控制雨滴效果是否激活false
+  let rain = false; // 控制雨滴效果是否激活
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
+  let rainyDay; // 雨滴效果的对象
 
   // 时钟组件
   let currentTime = '';
@@ -21,6 +22,24 @@
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+  // 天气组件
+  let weather = { temp: '', description: '', iconUrl: '' };
+  let today = new Date().getDay(); // 获取今天是星期几的索引，0代表星期天
+  let forecastDays = []; // 存储接下来的天数标签
+  // 生成未来几天的标签
+  for (let i = 0; i < 5; i++) {
+    let dayIndex = (today + i) % 7; // 计算未来的天数索引
+    forecastDays.push(days[dayIndex]); // 添加到数组
+  }
+
+  // 日历组件
+  let currentFormattedDate = '';
+  const daysAbbreviated = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let currentMonthIndex = new Date().getMonth();
+  let currentYear = new Date().getFullYear();
+  let daysInMonth = [];
+
+  
   // 闪念胶囊的位置
   let snjntop, snjnleft;
 
@@ -61,6 +80,20 @@
     window.addEventListener('wheel', handleWheel);
     // 时间组件的更新
     updateDateTime();
+    // 日历的更新
+    updateCurrentFormattedDate();
+    updateCalendar();
+
+    navigator.geolocation.getCurrentPosition(async position => {
+        const { latitude, longitude } = position.coords;
+        await fetchWeatherData(weatherInfo => {
+            weather = weatherInfo;
+        }, latitude, longitude);
+    }, error => {
+        console.error('Error getting location', error);
+    });
+
+    await loadScript('pack/rainyday.min.js');
 
     // 基于rain判断是否下雨
     if (rain) {
@@ -223,6 +256,10 @@
     // 开始绘制雨滴
     requestAnimationFrame(animateRain);
 
+    dropletEffect()
+  }
+
+  function dropletEffect() {
     const rainDiv = document.getElementById('rainEffectContainer');
     // 确保div是全屏的
     rainDiv.style.width = "100vw";
@@ -296,23 +333,248 @@
     requestAnimationFrame(animateRain);
   }
 
+  async function loadScript(url) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
   // 时钟组件function：
   function updateDateTime() {
     const now = new Date();
     currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     currentDate = `${months[now.getMonth()]} ${now.getDate()}`;
     currentDay = days[now.getDay()];
-
-    // Ensure the UI updates
-    // In Svelte, assignments trigger DOM updates, so we need to call this function in a loop
     requestAnimationFrame(updateDateTime);
+  }
+
+  async function fetchWeatherData(setWeather, lat, lon) {
+    const weatherKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
+    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=22.333564&lon=114.269492&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=32.715736&lon=-117.161087&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+
+    try {
+      const cityName = await fetchCityName(lat, lon); // 获取城市名称
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const currentTime = Date.now() / 1000;
+      const isDaytime = currentTime >= data.current.sunrise && currentTime <= data.current.sunset;
+
+      const sunriseTime = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sunsetTime = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const dailyForecast = data.daily.slice(1, 6).map(day => ({
+        minTemp: Math.round(day.temp.min),
+        maxTemp: Math.round(day.temp.max),
+        icon: `weathericon/${chooseIconFileName(day.weather[0].id, isDaytime)}`
+      }));
+
+      setWeather({
+        location: cityName, // 使用从 Google API 获取的城市名称
+        temp: `${Math.round(data.current.temp)}°C`,
+        feels_like: `${Math.round(data.current.feels_like)}°C`,
+        sunrise: sunriseTime,
+        sunset: sunsetTime,
+        description: data.current.weather[0].description,
+        iconUrl: `weathericon/${chooseIconFileName(data.current.weather[0].id, isDaytime)}`,
+        dailyForecast
+      });
+    } catch (error) {
+      console.error('Failed to fetch weather data:', error);
+      setWeather({ location: '位置获取失败', temp: 'N/A', description: '无数据', iconUrl: '' });
+    }
+  }
+
+  function chooseIconFileName(weatherId, isDaytime) {
+    const iconMapping = {
+        // Thunderstorm
+        200: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        201: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        202: "thunder_color.png",
+        210: "thunder_color.png",
+        211: "thunder_color.png",
+        212: "thunder_color.png",
+        221: "thunder_color.png",
+        230: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        231: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+        232: isDaytime ? "thunder_sunny_color.png" : "thunder_night_color.png",
+
+        // Drizzle
+        300: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        301: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        302: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        310: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        311: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        312: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        313: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        314: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+        321: isDaytime ? "rain_sunny_color.png" : "rain_light_night_color.png",
+
+        // Rain
+        500: "rain_light_color.png",
+        501: "rain_light_color.png",
+        502: "rain_heavy_color.png",
+        503: "rain_heavy_color.png",
+        504: "rain_heavy_color.png",
+        511: "rain_heavy_color.png",
+        520: "rain_sunny_color.png",
+        521: "rain_sunny_color.png",
+        522: "rain_sunny_color.png",
+        531: "rain_sunny_color.png",
+
+        // Snow
+        600: "snowy_light_color.png",
+        601: "snowy_heavy_color.png",
+        602: "snowy_heavy_color.png",
+        611: "snowy_light_color.png",
+        612: "snowy_light_color.png",
+        613: "snowy_light_color.png",
+        615: "snowy_light_color.png",
+        616: "snowy_heavy_color.png",
+        620: "snowy_light_color.png",
+        621: "snowy_heavy_color.png",
+        622: "snowy_heavy_color.png",
+
+        // Atmosphere
+        701: isDaytime ? "sunny_foggy_color.png" : "foggy_night_color.png",
+        711: isDaytime ? "sunny_foggy_color.png" : "foggy_night_color.png",
+        721: "cloudy_foggy_color.png",
+        731: "cloudy_foggy_color.png",
+        741: "cloudy_foggy_color.png",
+        751: "cloudy_foggy_color.png",
+        761: isDaytime ? "sunny_foggy_color.png" : "foggy_night_color.png",
+        762: "cloudy_windy_color.png",
+        771: "windy_color.png",
+        781: "windy_color.png",
+
+        // Clear
+        800: isDaytime ? "sunny_color.png" : "night_color.png",
+
+        // Clouds
+        801: isDaytime ? "cloudy_sunny_color.png" : "cloudy_night_color.png",
+        802: isDaytime ? "cloudy_sunny_color.png" : "cloudy_night_color.png",
+        803: isDaytime ? "cloudy_foggy_sunny_color.png" : "cloudy_foggy_night__color.png",
+        804: "cloudy_foggy_color.png"
+    };
+
+    return iconMapping[weatherId] || "default_icon.png"; // default_icon.png 是当没有合适的图标时的后备选项
+  }
+
+  async function fetchCityName(lat, lon) {
+    const mapKey = 'AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4';
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${mapKey}`;
+
+    // const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=22.333564,114.269492&key=AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4`;
+    // const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=32.715736,-117.161087&key=AIzaSyDh3JpTYnFa1UpGU4p-m396b3VjiymJ0O4`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+            const addressComponents = data.results[0].address_components;
+            let locality = addressComponents.find(component => component.types.includes('locality'));
+            if (!locality) {
+                locality = addressComponents.find(component => component.types.includes('country'));
+            }
+            const sublocality = addressComponents.find(component =>  component.types.includes('neighborhood'));
+
+            let locationName = locality ? locality.long_name : '未知城市';
+            if (sublocality) {
+                locationName += `, ${sublocality.long_name}`;
+            }
+
+            return locationName;
+        }
+        return '未知位置';
+    } catch (error) {
+        console.error('Failed to fetch city name:', error);
+        return '位置获取失败';
+    }
+  }
+
+  // 日历的function
+  function updateCurrentFormattedDate() {
+    currentFormattedDate = `${currentYear}年${currentMonthIndex + 1}月`;
+  }
+
+  function getMonthData(year, month) {
+    let startDay = new Date(year, month, 1).getDay();
+    let numDays = new Date(year, month + 1, 0).getDate();
+
+    // 计算上个月的天数
+    let prevMonthDays = month === 0 ? new Date(year - 1, 12, 0).getDate() : new Date(year, month, 0).getDate();
+    // 下个月的开始天数简单计算为1，因为我们从1号开始显示
+    let nextMonthStart = 1;  // 这里改为let
+    // 计算需要显示的上个月的天数
+    let displayPrevMonthDays = startDay;
+
+    return { startDay, numDays, prevMonthDays, nextMonthStart, displayPrevMonthDays };
+  }
+
+  function nextMonth() {
+    if (currentMonthIndex === 11) {
+      currentMonthIndex = 0;
+      currentYear++;
+    } else {
+      currentMonthIndex++;
+    }
+    updateCalendar();
+  }
+
+  function previousMonth() {
+    if (currentMonthIndex === 0) {
+      currentMonthIndex = 11;
+      currentYear--;
+    } else {
+      currentMonthIndex--;
+    }
+    updateCalendar();
+  }
+
+  function updateCalendar() {
+    const { startDay, numDays, prevMonthDays, nextMonthStart: initialNextMonthStart, displayPrevMonthDays } = getMonthData(currentYear, currentMonthIndex);
+    const today = new Date();
+    const todayDate = today.getDate();
+    const isCurrentMonth = today.getMonth() === currentMonthIndex && today.getFullYear() === currentYear;
+
+    // 计算所需的单元格总数
+    const totalCells = startDay + numDays; // 当月和上月剩余所需的总格数
+    daysInMonth = Array(totalCells > 35 ? 42 : 35).fill(null); // 如果超过35格则需要42格，否则只需35格
+
+    // 填充上月日期
+    for (let i = 0; i < displayPrevMonthDays; i++) {
+        daysInMonth[i] = { day: prevMonthDays - displayPrevMonthDays + i + 1, currentMonth: false, isToday: false };
+    }
+
+    // 填充当月日期
+    for (let i = 0; i < numDays; i++) {
+        daysInMonth[startDay + i] = { 
+            day: i + 1, 
+            currentMonth: true, 
+            isToday: isCurrentMonth && (i + 1) === todayDate // 标记今天的日期
+        };
+    }
+
+    // 如果需要，填充下月日期
+    let nextMonthStart = initialNextMonthStart;
+    let nextDaysFillStart = startDay + numDays;
+    for (let i = nextDaysFillStart; i < daysInMonth.length; i++) {
+        daysInMonth[i] = { day: nextMonthStart++, currentMonth: false, isToday: false };
+    }
+
+    updateCurrentFormattedDate(); // 更新顶部显示的当前年月
   }
 </script>
 
 <main>
-  <!-- 引入RainyDay.js库 -->
-  <script src="pack/rainyday.min.js" defer></script>
-  
+
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
 
@@ -330,6 +592,7 @@
     <rect width={width} height={height} fill="transparent"/>
   </svg>
 
+  <!-- 时钟组件 -->
   {#if isVisible}
     <div style="position: absolute; top: {clocktop}px; left: 48.4%; transform: translateX(-50%); transition: top 0.5s, left 0.5s; z-index: 3;">
         <div transition:fly="{{ y: 40, duration: 300 }}" id="clock-container">
@@ -357,6 +620,61 @@
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
+      <!-- 当前年月显示 -->
+      <text x="50%" y="15%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.0035}em">
+        {currentFormattedDate}
+      </text>
+      <!-- 左侧按钮：上一个月 -->
+      <foreignObject x="10%" y="11%" width="7%" height="7%">
+        <button on:click={previousMonth} class="calendar-button">
+          <img src="smallicon/back.png" alt="Previous Month" style="width: 100%; height: auto;"/>
+        </button>
+      </foreignObject>
+      <!-- 右侧按钮：下一个月 -->
+      <foreignObject x="83%" y="11%" width="7%" height="7%">
+        <button on:click={nextMonth} class="calendar-button">
+          <img src="smallicon/forward.png" alt="Next Month" style="width: 100%; height: auto;"/>
+        </button>
+      </foreignObject>
+      {#each daysAbbreviated as day, index}
+        <text 
+          x="{6.25 + index * 12.5 + 6.25}%" 
+          y="21.5%" 
+          dominant-baseline="middle" 
+          text-anchor="middle" 
+          fill="rgba(255, 255, 255, 0.5)" 
+          font-size="{height * 0.0016}em">
+          {day}
+        </text>
+      {/each}
+      <!-- 绘制日历网格 -->
+      {#each Array(Math.ceil(daysInMonth.length / 7)) as _, row (row)}
+        {#each Array(7) as _, col (col)}
+          <rect
+            x="{6.25 + col * 12.5}%" 
+            y="{23 + row * 12.5}%" 
+            width="12.5%"
+            height="12.5%"
+            fill={
+              daysInMonth[row * 7 + col]?.isToday ? 'rgba(225, 225, 255, 0.6)' :
+              daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(225, 225, 255, 0.05)' : 'rgba(150, 150, 150, 0.5)'
+            }
+            stroke="rgba(255, 255, 255, 0.3)"
+            stroke-width="0.1%"
+          />
+          {#if daysInMonth[row * 7 + col]}
+            <text
+              x="{6.25 + col * 12.5 + 6.25}%" 
+              y="{23 + row * 12.5 + 6.25}%" 
+              dominant-baseline="middle" 
+              text-anchor="middle" 
+              fill={daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(255, 255, 255, 0.7)' : 'rgba(190, 190, 190, 0.7)'}
+              font-size="{height * 0.002}em">
+              {daysInMonth[row * 7 + col].day}
+            </text>
+          {/if}
+        {/each}
+      {/each}
     </svg>
   {/if}
 
@@ -389,6 +707,48 @@
       out:fly={{y: 300, duration: 300}}
     >
       <rect width="100%" height="100%" fill="transparent" />
+      <!-- 天气描述文本 -->
+      <image href="{weather.iconUrl}" x="2%" y="17%" width="50%" height="50%"/>
+      <!-- 城市名称 -->
+      <text x="50%" y="15%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.0035}em">
+        {weather.location}
+      </text>
+      <!-- 温度 -->
+      <text x="57%" y="35%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.008}em">
+        {weather.temp}
+      </text>
+      <!-- 天气描述 -->
+      <text x="57%" y="45%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.003}em">
+        {weather.description}
+      </text>
+      <!-- 体感温度 -->
+      <text x="57%" y="53%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
+        体感温度: {weather.feels_like}
+      </text>
+      <!-- 日出日落时间 -->
+      <text x="57%" y="58%" dominant-baseline="middle" text-anchor="left" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
+        日出: {weather.sunrise} 日落: {weather.sunset}
+      </text>
+      <!-- 天气图标温度分割线 -->
+      <line x1="50%" y1="25%" x2="50%" y2="60%" stroke="rgba(255, 255, 255, 0.3)" stroke-width="0.5%"/>
+      <!-- 接下来五天的天气预报 -->
+      {#each forecastDays as day, index}
+        <text 
+          x="{10 + index * 20}%"
+          y="69%" 
+          dominant-baseline="middle" 
+          text-anchor="middle" 
+          fill="rgba(255, 255, 255, 0.7)" 
+          font-size="{height * 0.002}em">
+          {day === days[today] ? 'Today' : day}
+        </text>
+      {/each}
+      {#each weather.dailyForecast as forecast, index}
+        <image href="{forecast.icon}" x="{2.5 + index * 20}%" y="73%" width="15%" height="15%" />
+        <text x="{10 + index * 20}%" y="92%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-size="{height * 0.002}em">
+          {forecast.minTemp} / {forecast.maxTemp}
+        </text>
+      {/each}
     </svg>
   {/if}
 
@@ -597,6 +957,7 @@
     color: rgba(255, 255, 255, 0.7); /* 字体颜色 */
     background-color: rgba(0, 0, 0, 0); /* 背景颜色 */
   }
+
   .date-info {
     display: flex;
     flex-direction: column; /* 使内容垂直堆叠 */
@@ -606,5 +967,29 @@
   }
   .day, .date {
     display: block; /* 上下排列 */
+    white-space: nowrap;
+  }
+
+  .calendar-button {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    transition: background-color 0.3s, transform 0.2s, opacity 0.3s;  /* 添加透明度变化的过渡效果 */
+  }
+
+  .calendar-button img {
+      opacity: 0.6; /* 初始图标透明度 */
+      transition: opacity 0.3s; /* 添加透明度变化的过渡效果 */
+  }
+
+  .calendar-button:hover img {
+      opacity: 0.9; /* 鼠标悬停时图标透明度 */
+  }
+
+  .calendar-button:active {
+      transform: scale(0.6); /* 点击时缩小图标 */
   }
 </style>
