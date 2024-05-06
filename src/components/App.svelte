@@ -26,6 +26,8 @@
   let weather = { temp: '', description: '', iconUrl: '' };
   let today = new Date().getDay(); // 获取今天是星期几的索引，0代表星期天
   let forecastDays = []; // 存储接下来的天数标签
+  let sunriseTime = '';
+  let sunsetTime = '';
   // 生成未来几天的标签
   for (let i = 0; i < 5; i++) {
     let dayIndex = (today + i) % 7; // 计算未来的天数索引
@@ -38,6 +40,8 @@
   let currentMonthIndex = new Date().getMonth();
   let currentYear = new Date().getFullYear();
   let daysInMonth = [];
+  let animateNext = false;
+  let animatePrev = false;
 
   
   // 闪念胶囊的位置
@@ -367,8 +371,8 @@
       const currentTime = Date.now() / 1000;
       const isDaytime = currentTime >= data.current.sunrise && currentTime <= data.current.sunset;
 
-      const sunriseTime = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const sunsetTime = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      sunriseTime = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      sunsetTime = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       const dailyForecast = data.daily.slice(1, 6).map(day => ({
         minTemp: Math.round(day.temp.min),
@@ -517,25 +521,33 @@
 
     return { startDay, numDays, prevMonthDays, nextMonthStart, displayPrevMonthDays };
   }
-
+  
   function nextMonth() {
+    animateNext = true; // 先触发动画
     if (currentMonthIndex === 11) {
-      currentMonthIndex = 0;
-      currentYear++;
+        currentMonthIndex = 0;
+        currentYear++;
     } else {
-      currentMonthIndex++;
+        currentMonthIndex++;
     }
-    updateCalendar();
+    setTimeout(() => {
+        updateCalendar(); // 在动画完成后更新日历数据
+        animateNext = false; // 重置动画状态
+    }, 480); // 与CSS动画的时长相匹配
   }
 
   function previousMonth() {
+    animatePrev = true; // 先触发动画
     if (currentMonthIndex === 0) {
-      currentMonthIndex = 11;
-      currentYear--;
+        currentMonthIndex = 11;
+        currentYear--;
     } else {
-      currentMonthIndex--;
+        currentMonthIndex--;
     }
-    updateCalendar();
+    setTimeout(() => {
+        updateCalendar(); // 在动画完成后更新日历数据
+        animatePrev = false; // 重置动画状态
+    }, 480); // 与CSS动画的时长相匹配
   }
 
   function updateCalendar() {
@@ -650,29 +662,39 @@
       <!-- 绘制日历网格 -->
       {#each Array(Math.ceil(daysInMonth.length / 7)) as _, row (row)}
         {#each Array(7) as _, col (col)}
-          <rect
-            x="{6.25 + col * 12.5}%" 
-            y="{23 + row * 12.5}%" 
-            width="12.5%"
-            height="12.5%"
-            fill={
-              daysInMonth[row * 7 + col]?.isToday ? 'rgba(225, 225, 255, 0.6)' :
-              daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(225, 225, 255, 0.05)' : 'rgba(150, 150, 150, 0.5)'
-            }
-            stroke="rgba(255, 255, 255, 0.3)"
-            stroke-width="0.1%"
-          />
-          {#if daysInMonth[row * 7 + col]}
-            <text
-              x="{6.25 + col * 12.5 + 6.25}%" 
-              y="{23 + row * 12.5 + 6.25}%" 
-              dominant-baseline="middle" 
-              text-anchor="middle" 
-              fill={daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(255, 255, 255, 0.7)' : 'rgba(190, 190, 190, 0.7)'}
-              font-size="{height * 0.002}em">
-              {daysInMonth[row * 7 + col].day}
-            </text>
-          {/if}
+          <g
+            class:flip-animation={(animateNext || animatePrev)}
+            class:flip-to-next={animateNext}
+            class:flip-to-prev={animatePrev}
+            class:fade-in={animateNext === false && animatePrev === false}
+            style="transform-origin: {6.25 + col * 12.5 + 6.25}% {23 + row * 12.5 + 6.25}%;"
+          >
+            <rect
+              x="{6.25 + col * 12.5}%"
+              y="{23 + row * 12.5}%"
+              width="12.5%"
+              height="12.5%"
+              fill={
+                daysInMonth[row * 7 + col]?.isToday ? 'rgba(225, 225, 255, 0.6)' :
+                daysInMonth[row * 7 + col]?.currentMonth ? 'rgba(225, 225, 255, 0.05)' : 'rgba(150, 150, 150, 0.5)'
+              }
+              stroke="rgba(255, 255, 255, 0.3)"
+              stroke-width="0.1%"
+            />
+            {#if daysInMonth[row * 7 + col]}
+              <!-- Current month side -->
+              <text
+                class="front"
+                x="{6.25 + col * 12.5 + 6.25}%"
+                y="{23 + row * 12.5 + 6.25}%"
+                dominant-baseline="middle"
+                text-anchor="middle"
+                fill="rgba(255, 255, 255, 0.7)"
+                font-size="{height * 0.002}em">
+                {daysInMonth[row * 7 + col].day}
+              </text>
+            {/if}
+          </g>
         {/each}
       {/each}
     </svg>
@@ -991,5 +1013,30 @@
 
   .calendar-button:active {
       transform: scale(0.6); /* 点击时缩小图标 */
+  }
+
+  .flip-animation {
+    transition: transform 0.3s, opacity 0.5s;
+    transform-style: preserve-3d;
+  }
+
+  .flip-to-next {
+    transform: scale(0.75);
+    opacity: 0.05;
+  }
+
+  .flip-to-prev {
+    transform: scale(0.75);
+    opacity: 0.05;
+  }
+
+  .fade-in {
+    opacity: 1;
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0.05;}
+    to { opacity: 1; }
   }
 </style>
