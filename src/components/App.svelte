@@ -78,6 +78,11 @@
   // 日历组件的长宽
   let rlwidth, rlheight;
 
+  // 图标托盘的参数
+  let iconpagewidth;
+  let pageratio;
+  let blocknumber;
+
   onMount( async() => {
     calculateSizeAndPosition();
     window.addEventListener('resize', calculateSizeAndPosition);
@@ -107,7 +112,7 @@
     return () => {
       clearInterval(interval); // 清除时钟定时器
       window.removeEventListener('resize', calculateSizeAndPosition);
-      window.removeEventListener('wheel', handleWheel); // 确保在组件销毁时移除事件监听器
+      window.removeEventListener('wheel', handleWheel); // 在组件销毁时移除事件监听器
     };
   });
 
@@ -164,6 +169,32 @@
     showSidebar = false;
     showSettingbar = false;
     searchContainerLeft = '50%';
+
+    // 图标托盘的宽度动态计算
+    pageratio = pagewidth/pageheight;
+    // iconpagewidth = window.innerHeight * 0.475 * 4/3;
+    if (pageratio < 3/2) {
+      iconpagewidth = 0;
+      blocknumber = 9;
+    } else if (pageratio >= 9/6 && pageratio < 10/6) {
+        iconpagewidth = window.innerHeight * 0.475;
+        blocknumber = 9;
+    } else if (pageratio >= 10/6 && pageratio < 11/6) {
+        iconpagewidth = window.innerHeight * 0.475 * 4/3;
+        blocknumber = 12;
+    } else if (pageratio >= 11/6 && pageratio < 12/6) {
+        iconpagewidth = window.innerHeight * 0.475 * 5/3;
+        blocknumber = 15;
+    } else if (pageratio >= 12/6 && pageratio < 13/6) {
+        iconpagewidth = window.innerHeight * 0.475 * 6/3;
+        blocknumber = 18;
+    } else if (pageratio >= 13/6 && pageratio < 14/6) {
+        iconpagewidth = window.innerHeight * 0.475 * 7/3;
+        blocknumber = 21;
+    } else if (pageratio >= 24/6) {
+        iconpagewidth = window.innerHeight * 0.475 * 8/3;
+        blocknumber = 24;
+    } 
   }
 
   // 处理鼠标滚轮事件的函数
@@ -190,7 +221,7 @@
 
   // 更改闪念胶囊页面是否出现
   function toggleSidebar() {
-    if (showSidebar) {
+    if (showSidebar || showSettingbar) {
       showSidebar = !showSidebar;
       searchContainerLeft = '50%'
     } else {
@@ -203,7 +234,7 @@
 
   // 更改桌面设置页面是否出现
   function togglesettingbar() {
-    if (showSettingbar) {
+    if (showSettingbar || showSidebar) {
       showSettingbar = !showSettingbar;
       searchContainerLeft = '50%'
     } else {
@@ -590,17 +621,20 @@
   <!-- 设置图片为全屏背景 -->
   <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
 
+  <!-- 搜索功能组件 -->
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
-    <input class="search-input" placeholder="Search..." 
-           style="height: {searchbarheight}px; 
-                  font-size: {searchbarheight * 0.75}px; 
-                  border-radius: {searchbarheight * 100}px; 
-                  padding: {searchbarheight * 0.5}px {searchbarheight * 0}px;
-                  text-indent: {searchbarheight * 1}px;">
+    <form action="https://www.google.com/search" method="get" target="_blank">
+        <input type="text" name="q" class="search-input" placeholder="Search..."
+               style="height: {searchbarheight}px; 
+                      font-size: {searchbarheight * 0.75}px; 
+                      border-radius: {pageheight * 0.04}px; 
+                      padding: {searchbarheight * 0.5}px {searchbarheight * 0}px;
+                      text-indent: {searchbarheight * 1}px;">
+    </form>
   </div>
 
   <!-- 底部承托组件平台 -->
-  <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%); transition: height 0.3s, top 0.3s;" viewBox="0 0 {width} {height}">
+  <svg {width} {height} style="position: absolute; top: {topPosition}px; left: 50%; transform: translateX(-50%); transition: height 0.3s, top 0.3s;">
     <rect width={width} height={height} fill="transparent"/>
   </svg>
 
@@ -619,15 +653,29 @@
     </div>
   {/if}
 
+  <!-- 网页链接组件位置 -->
+  {#if !isVisible}
+    <svg
+      width="{iconpagewidth}px"
+      height="{rlheight}px"
+      style="position: absolute; bottom: 1.25%; left: 50%; 
+      border-radius: {pageheight * 0.01}px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
+      in:fly={{y: 500, duration: 1000}}
+      out:fly={{y: 300, duration: 300}}
+    >
+      <rect width="100%" height="100%" fill="transparent" />
+    </svg>
+  {/if}
+
   <!-- 日历组件位置 -->
   {#if !isVisible}
     <svg
       width="{rlwidth}px" 
       height="{rlheight}px"
       style="position: absolute; bottom: 1.25%; left: {rlwidth * 0.525}px;
-      border-radius: 10px;
+      border-radius: {pageheight * 0.01}px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
-      viewBox="0 0 {rlwidth} {rlheight}"
       in:fly={{y: 500, duration: 800}}
       out:fly={{y: 300, duration: 300}}
     >
@@ -700,31 +748,14 @@
     </svg>
   {/if}
 
-  <!-- 网页链接组件位置 -->
-  {#if !isVisible}
-    <svg
-      width="{pagewidth - rlwidth * 2 - rlwidth * 0.1}px"
-      height="{rlheight}px"
-      style="position: absolute; bottom: 1.25%; left: 50%; 
-      border-radius: 10px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
-      viewBox="0 0 {rlwidth} {rlheight}"
-      in:fly={{y: 500, duration: 1000}}
-      out:fly={{y: 300, duration: 300}}
-    >
-      <rect width="100%" height="100%" fill="transparent" />
-    </svg>
-  {/if}
-
   <!-- 天气组件位置 -->
   {#if !isVisible}
     <svg
       width="{rlwidth}px" 
       height="{rlheight}px"
       style="position: absolute; bottom: 1.25%; left: {width - rlwidth * 0.525}px; 
-      border-radius: 10px;
+      border-radius: {pageheight * 0.01}px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"
-      viewBox="0 0 {rlwidth} {rlheight}"
       in:fly={{y: 500, duration: 800}}
       out:fly={{y: 300, duration: 300}}
     >
@@ -846,24 +877,24 @@
   :global(body) {
     margin: 0; /* 移除默认边距 */
     overflow: hidden; /* 隐藏滚动条 */
-    font-family: 'Smartisan Compact', sans-serif; /* 作为回退，这里还包括了一个常见的字体 */
+    font-family: 'Smartisan Compact', sans-serif;
   }
   
-  /* 背景图像样式，确保全屏显示且覆盖整个视口 */
+  /* 背景图像样式*/
   .fullscreen-image {
     top: 0; /* 顶部对齐 */
     left: 0; /* 左侧对齐 */
     width: 100vw;
     height: 100vh;
     object-fit: cover;  /* 覆盖整个内容区域 */
-    z-index: 0;  /* 确保图像在内容之下 */
+    z-index: 0;  /* 图像在内容之下 */
   }
 
   svg {
     position: absolute;
     left: 50%;
     transform: translate(-50%, 0%);
-    overflow: hidden; /* 确保滤镜效果生效 */
+    overflow: hidden; /* 滤镜效果*/
     backdrop-filter: blur(5px); /* 毛玻璃效果 */
     -webkit-backdrop-filter: blur(5px); /* Safari浏览器兼容 */
     background-color: rgba(120, 120, 120, 0.1); /* 背景颜色透明度，与毛玻璃效果结合 */
@@ -907,8 +938,8 @@
   }
 
   .search-input::placeholder {
-    color: rgba(0, 0, 0, 0.5); /* 调整 placeholder 文字颜色，使其更淡 */
-    font-family: 'Smartisan Compact', sans-serif; /* 确保使用自定义字体 */
+    color: rgba(0, 0, 0, 0.5);
+    font-family: 'Smartisan Compact', sans-serif; /* 使用字体 */
     opacity: 1; /* 修复某些浏览器中透明度的问题 */
   }
 
@@ -969,7 +1000,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 1; /* 确保这个div在背景之上，但在其他UI组件之下 */
+    z-index: 1;
     pointer-events: none; /* 允许鼠标事件穿透到下层元素 */
   }
 
