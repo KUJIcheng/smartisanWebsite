@@ -1,6 +1,7 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, afterUpdate } from 'svelte';
   import { fly } from 'svelte/transition';
+  import * as d3 from 'd3';
 
   let height, width, topPosition, iconsize;
   let pageheight, pagewidth;
@@ -82,6 +83,9 @@
   let iconpagewidth;
   let pageratio;
   let blocknumber;
+  const rows = 3;
+  let cols;
+  let svgWidth, svgHeight;
 
   onMount( async() => {
     calculateSizeAndPosition();
@@ -114,6 +118,12 @@
       window.removeEventListener('resize', calculateSizeAndPosition);
       window.removeEventListener('wheel', handleWheel); // 在组件销毁时移除事件监听器
     };
+  });
+
+  afterUpdate(() => {
+    if (! isVisible) {
+      calculateSizeAndPosition();
+    }
   });
 
   function calculateSizeAndPosition() {
@@ -194,7 +204,16 @@
     } else if (pageratio >= 24/6) {
         iconpagewidth = window.innerHeight * 0.475 * 8/3;
         blocknumber = 24;
-    } 
+    }
+
+    svgWidth = iconpagewidth;
+    svgHeight = rlheight;
+
+    cols = Math.ceil(blocknumber / rows);
+
+    if (! isVisible){
+      updateBlocks();
+    }
   }
 
   // 处理鼠标滚轮事件的函数
@@ -614,6 +633,117 @@
 
     updateCurrentFormattedDate(); // 更新顶部显示的当前年月
   }
+
+  // 图标链接托盘代码
+  function updateBlocks() {
+    const gridWidth = svgWidth / cols;
+    const gridHeight = svgHeight / rows;
+
+    const blocksData = Array.from({ length: blocknumber }, (_, i) => ({
+      x: (i % cols) * gridWidth,
+      y: Math.floor(i / cols) * gridHeight,
+      width: gridWidth - 1,
+      height: gridHeight - 1,
+      color: 'rgba(200, 200, 200, 0.25)'
+    }));
+
+    const svg = d3.select('#icon-tray-svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight);
+
+    svg.selectAll('rect').remove(); // 清空之前的内容
+
+    const blocks = svg.selectAll('rect').data(blocksData).enter().append('rect');
+
+    blocks.attr('x', d => d.x)
+      .attr('y', d => d.y)
+      .attr('width', d => d.width)
+      .attr('height', d => d.height)
+      .attr('fill', d => d.color)
+      .attr('cursor', 'pointer');
+
+    const drag = d3.drag()
+      .on('start', function(event, d) {
+        d3.select(this).raise().style('fill', 'rgba(180, 180, 180, 0.2)');
+      })
+      .on('drag', function(event, d) {
+        const newX = Math.max(0, Math.min(svgWidth - d.width, event.x));
+        const newY = Math.max(0, Math.min(svgHeight - d.height, event.y));
+        d.x = newX;
+        d.y = newY;
+        d3.select(this).attr('x', d.x).attr('y', d.y);
+        adjustBlocks(d, this);
+      })
+      .on('end', function(event, d) {
+        d.x = Math.round(d.x / gridWidth) * gridWidth;
+        d.y = Math.round(d.y / gridHeight) * gridHeight;
+        const finalPos = checkForOverlap(d);
+        d.x = finalPos.x;
+        d.y = finalPos.y;
+        d3.select(this).transition().duration(300)
+          .attr('x', d.x)
+          .attr('y', d.y)
+          .style('fill', d.color);
+      });
+
+    blocks.call(drag);
+
+    function adjustBlocks(activeBlock, activeElement) {
+      blocks.each(function(otherData) {
+        if (otherData !== activeBlock) {
+          const otherElement = d3.select(this);
+          if (Math.abs(otherData.x - activeBlock.x) < (2/3) * gridWidth && Math.abs(otherData.y - activeBlock.y) < (2/3) * gridHeight) {
+            const freePos = findFreeSpot(activeBlock);
+            otherData.x = freePos.x;
+            otherData.y = freePos.y;
+            otherElement.transition().duration(300)
+              .attr('x', otherData.x)
+              .attr('y', otherData.y);
+          }
+        }
+      });
+    }
+
+    function findFreeSpot(excludedBlock) {
+      const occupied = new Set(blocksData.filter(d => d !== excludedBlock).map(d => `${d.x},${d.y}`));
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const testX = j * gridWidth;
+          const testY = i * gridHeight;
+          if (!occupied.has(`${testX},${testY}`)) {
+            return { x: testX, y: testY };
+          }
+        }
+      }
+      return { x: excludedBlock.x, y: excludedBlock.y };
+    }
+
+    function checkForOverlap(draggedBlock) {
+      const occupied = new Set(blocksData.filter(d => d !== draggedBlock).map(d => `${d.x},${d.y}`));
+      let newX = draggedBlock.x;
+      let newY = draggedBlock.y;
+      while (occupied.has(`${newX},${newY}`)) {
+        const freePos = findFreeSpot(draggedBlock);
+        newX = freePos.x;
+        newY = freePos.y;
+      }
+      return { x: newX, y: newY };
+    }
+  }
+
+  // 搜索组件的内容更新
+  let searchInput = '';
+
+  function handleSearchSubmit(event) {
+    // 防止表单默认提交行为
+    event.preventDefault();
+    
+    // 提交表单
+    event.target.submit();
+    
+    // 清空搜索框内容
+    searchInput = '';
+  }
 </script>
 
 <main>
@@ -623,9 +753,10 @@
 
   <!-- 搜索功能组件 -->
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
-    <form action="https://www.google.com/search" method="get" target="_blank">
-        <input type="text" name="q" class="search-input" placeholder="Search..."
-               style="height: {searchbarheight}px; 
+    <form action="https://www.google.com/search" method="get" target="_blank" on:submit={handleSearchSubmit}>
+        <input type="text" name="q" class="search-input" bind:value={searchInput} placeholder="Search..."
+              autocomplete="off"
+              style="height: {searchbarheight}px; 
                       font-size: {searchbarheight * 0.75}px; 
                       border-radius: {pageheight * 0.04}px; 
                       padding: {searchbarheight * 0.5}px {searchbarheight * 0}px;
@@ -656,6 +787,7 @@
   <!-- 网页链接组件位置 -->
   {#if !isVisible}
     <svg
+      id="icon-tray-svg"
       width="{iconpagewidth}px"
       height="{rlheight}px"
       style="position: absolute; bottom: 1.25%; left: 50%; 
