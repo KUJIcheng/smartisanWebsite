@@ -11,10 +11,11 @@
   let showSettingbar = false; // 桌面设置是否出现
 
   // 下雨的组件
-  let rain = false; // 控制雨滴效果是否激活
+  let rain = true; // 控制雨滴效果是否激活
   let rainCanvas, rainCtx;
   let droplets = []; // 存储雨滴对象
   let rainyDay; // 雨滴效果的对象
+  let weatherID; // 存储天气代码
 
   // 时钟组件
   let currentTime = '';
@@ -102,16 +103,18 @@
         await fetchWeatherData(weatherInfo => {
             weather = weatherInfo;
         }, latitude, longitude);
+
+        // weatherID = 500; // 测试下雨功能用图
+
+        if (weatherID <= 700) {  // 如果 weatherID 小于等于 700，表示下雨
+            startRain();  // 启动雨滴效果
+        }
+
     }, error => {
         console.error('Error getting location', error);
     });
 
     await loadScript('pack/rainyday.min.js');
-
-    // 基于rain判断是否下雨
-    if (rain) {
-      startRain();
-    }
 
     return () => {
       clearInterval(interval); // 清除时钟定时器
@@ -305,15 +308,58 @@
     rainCanvas.height = window.innerHeight;
 
     // 创建雨滴
-    createDroplets();
+    createDroplets(weatherID);
 
     // 开始绘制雨滴
     requestAnimationFrame(animateRain);
 
-    dropletEffect()
+    if (weatherID >= 200 && weatherID <= 531) {
+      dropletEffect(weatherID);
+    }
   }
 
-  function dropletEffect() {
+  function dropletEffect(weatherID) {
+    // 雨滴效果映射表
+    const dropletEffectMapping = {
+
+      // 雷暴
+      200: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      201: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      202: { rainPattern: [[5, 1, 0.1], [3, 2, 0.1]], frequency: 25 },
+      210: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      211: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      212: { rainPattern: [[5, 1, 0.1], [3, 2, 0.1]], frequency: 25 },
+      221: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      230: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      231: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      232: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+
+      // 毛雨
+      300: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      301: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      302: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      310: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      311: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      312: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      313: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      314: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      321: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+
+      // 雨
+      500: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      501: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      502: { rainPattern: [[5, 1, 0.1], [3, 2, 0.1]], frequency: 25 },
+      503: { rainPattern: [[5, 1, 0.1], [3, 2, 0.1]], frequency: 25 },
+      504: { rainPattern: [[5, 1, 0.1], [3, 2, 0.1]], frequency: 25 },
+      511: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      520: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 },
+      521: { rainPattern: [[1, 2, 0.1], [1, 2, 0.1]], frequency: 25 },
+      522: { rainPattern: [[5, 1, 0.1], [3, 2, 0.1]], frequency: 25 },
+      531: { rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 }
+    };
+
+    const dropletParams = dropletEffectMapping[weatherID] || {rainPattern: [[3, 3, 0.1], [1, 3, 0.1]], frequency: 25 };
+
     const rainDiv = document.getElementById('rainEffectContainer');
     // 确保div是全屏的
     rainDiv.style.width = "100vw";
@@ -340,7 +386,10 @@
     });
 
     // 雨滴滴在玻璃上的效果
-    rainyDay.rain([[1, 0, 20], [3, 3, 1]], 50); // [[1, 0, 20], [3, 3, 1]], 50
+    rainyDay.rain(dropletParams.rainPattern, dropletParams.frequency);
+    // 小雨/毛毛雨：[[1, 2, 0.1], [1, 2, 0.1]], 25
+    // 中雨：[[3, 3, 0.1], [1, 3, 0.1]], 25
+    // 大雨：[[5, 1, 0.1], [3, 2, 0.1]], 25
   }
 
   function startdroplet() {
@@ -354,15 +403,74 @@
     rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
   }
 
-  function createDroplets() {
+  function createDroplets(weatherID) {
+    // 下雨效果映射表
+    const rainEffectMapping = {
+
+      // 雷暴
+      200: { dropletNumber: 20000, dropletSize: 1, dropletSpeed: 7 },
+      201: { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 },
+      202: { dropletNumber: 7000, dropletSize: 1.2, dropletSpeed: 7 },
+      210: { dropletNumber: 20000, dropletSize: 1, dropletSpeed: 7 },
+      211: { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 },
+      212: { dropletNumber: 7000, dropletSize: 1.2, dropletSpeed: 7 },
+      221: { dropletNumber: 20000, dropletSize: 1, dropletSpeed: 7 },
+      230: { dropletNumber: 20000, dropletSize: 0.5, dropletSpeed: 5 },
+      231: { dropletNumber: 15000, dropletSize: 0.5, dropletSpeed: 5 },
+      232: { dropletNumber: 10000, dropletSize: 0.5, dropletSpeed: 5 },
+
+      // 毛雨
+      300: { dropletNumber: 20000, dropletSize: 0.5, dropletSpeed: 5 },
+      301: { dropletNumber: 15000, dropletSize: 0.5, dropletSpeed: 5 },
+      302: { dropletNumber: 10000, dropletSize: 0.5, dropletSpeed: 5 },
+      310: { dropletNumber: 20000, dropletSize: 0.5, dropletSpeed: 5 },
+      311: { dropletNumber: 15000, dropletSize: 0.5, dropletSpeed: 5 },
+      312: { dropletNumber: 10000, dropletSize: 0.5, dropletSpeed: 5 },
+      313: { dropletNumber: 20000, dropletSize: 0.5, dropletSpeed: 5 },
+      314: { dropletNumber: 10000, dropletSize: 0.5, dropletSpeed: 5 },
+      321: { dropletNumber: 15000, dropletSize: 0.5, dropletSpeed: 5 },
+
+      // 雨
+      500: { dropletNumber: 20000, dropletSize: 1, dropletSpeed: 7 },
+      501: { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 },
+      502: { dropletNumber: 7000, dropletSize: 1.2, dropletSpeed: 7 },
+      503: { dropletNumber: 6500, dropletSize: 1.2, dropletSpeed: 7 },
+      504: { dropletNumber: 5500, dropletSize: 1.5, dropletSpeed: 7.2 },
+      511: { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 },
+      520: { dropletNumber: 20000, dropletSize: 1, dropletSpeed: 7 },
+      521: { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 },
+      522: { dropletNumber: 7000, dropletSize: 1.2, dropletSpeed: 7 },
+      531: { dropletNumber: 20000, dropletSize: 1, dropletSpeed: 7 },
+
+      // 雪
+      600: { dropletNumber: 40000, dropletSize: 3, dropletSpeed: 0.3 },
+      601: { dropletNumber: 30000, dropletSize: 3, dropletSpeed: 0.4 },
+      602: { dropletNumber: 20000, dropletSize: 3, dropletSpeed: 0.5 },
+      611: { dropletNumber: 30000, dropletSize: 3, dropletSpeed: 0.4 },
+      612: { dropletNumber: 50000, dropletSize: 3, dropletSpeed: 0.2 },
+      613: { dropletNumber: 30000, dropletSize: 3, dropletSpeed: 0.4 },
+      615: { dropletNumber: 40000, dropletSize: 3, dropletSpeed: 0.3 },
+      616: { dropletNumber: 30000, dropletSize: 3, dropletSpeed: 0.4 },
+      620: { dropletNumber: 40000, dropletSize: 3, dropletSpeed: 0.3 },
+      621: { dropletNumber: 30000, dropletSize: 3, dropletSpeed: 0.4 },
+      622: { dropletNumber: 20000, dropletSize: 3, dropletSpeed: 0.5 }
+    };
+
+    // 获取映射表中的对应参数
+    const rainParams = rainEffectMapping[weatherID] || { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 };
+
+    const dropletNumber = rainParams.dropletNumber; // 雨滴数量的控制因子
+    const dropletSize = rainParams.dropletSize; // 雨滴大小
+    const dropletSpeed = rainParams.dropletSpeed; // 雨滴下落速度
+
     // 基于屏幕大小生成一定数量的雨滴
-    const numberOfDroplets = rainCanvas.width * rainCanvas.height / 7000;
+    const numberOfDroplets = rainCanvas.width * rainCanvas.height / dropletNumber; // 雨滴数量
     for (let i = 0; i < numberOfDroplets; i++) {
       droplets.push({
         x: Math.random() * rainCanvas.width,
         y: Math.random() * rainCanvas.height,
-        size: Math.random() * 2 + 1, // 雨滴大小
-        speed: Math.random() * 2 + 6 // 雨滴下落速度
+        size: Math.random() * 2 + dropletSize, // 雨滴大小
+        speed: Math.random() * 2 + dropletSpeed // 雨滴下落速度
       });
     }
   }
@@ -375,14 +483,13 @@
       if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雨滴落出画面，则重置位置
         // 绘制椭圆形雨滴
         rainCtx.beginPath();
-        // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
         rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
-        rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
+        if (weatherID >= 600) {
+            rainCtx.fillStyle = 'rgba(200,200,200,0.75)'; // 雪花颜色
+        } else {
+            rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
+        }
         rainCtx.fill();
-        // rainCtx.beginPath();
-        // rainCtx.arc(droplet.x, droplet.y, droplet.size, 0, Math.PI * 2);
-        // rainCtx.fillStyle = 'rgba(130,130,130,0.2)'; // 雨滴颜色
-        // rainCtx.fill();
       });
     requestAnimationFrame(animateRain);
   }
@@ -410,13 +517,16 @@
     const weatherKey = 'fe4ef9fb1a3076d88704a1f3c2afe244';
     const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
 
-    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=22.333564&lon=114.269492&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
-    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=32.715736&lon=-117.161087&exclude=minutely,hourly&appid=${weatherKey}&units=metric`;
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=22.333564&lon=114.269492&exclude=minutely,hourly&appid=${weatherKey}&units=metric`; //香港
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=32.715736&lon=-117.161087&exclude=minutely,hourly&appid=${weatherKey}&units=metric`; //SD
+    // const url = `https://api.openweathermap.org/data/3.0/onecall?lat=32.333564&lon=118.269492&exclude=minutely,hourly&appid=${weatherKey}&units=metric`; //南京
 
     try {
       const cityName = await fetchCityName(lat, lon); // 获取城市名称
       const response = await fetch(url);
       const data = await response.json();
+
+      weatherID = data.current.weather[0].id // 获取天气ID
 
       const currentTime = Date.now() / 1000;
       const isDaytime = currentTime >= data.current.sunrise && currentTime <= data.current.sunset;
