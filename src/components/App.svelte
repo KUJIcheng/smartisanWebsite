@@ -104,7 +104,7 @@
             weather = weatherInfo;
         }, latitude, longitude);
 
-        // weatherID = 500; // 测试下雨功能用图
+        // weatherID = 504; // 测试下雨功能用图
 
         if (weatherID <= 700) {  // 如果 weatherID 小于等于 700，表示下雨
             startRain();  // 启动雨滴效果
@@ -457,7 +457,7 @@
     };
 
     // 获取映射表中的对应参数
-    const rainParams = rainEffectMapping[weatherID] || { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 };
+    const rainParams = rainEffectMapping[weatherID]; // || { dropletNumber: 10000, dropletSize: 1, dropletSpeed: 7 }
 
     const dropletNumber = rainParams.dropletNumber; // 雨滴数量的控制因子
     const dropletSize = rainParams.dropletSize; // 雨滴大小
@@ -479,18 +479,44 @@
     if (!rain) return;
     rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height); // 清除之前的绘制
     droplets.forEach(droplet => {
-      droplet.y += droplet.speed; // 更新雨滴位置
-      if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雨滴落出画面，则重置位置
-        // 绘制椭圆形雨滴
+        droplet.y += droplet.speed; // 更新雨滴/雪花的位置
+        if (droplet.y > rainCanvas.height) droplet.y = 0; // 如果雪花超出画面，重置位置
+        
+        // 开始绘制雨滴/雪花
         rainCtx.beginPath();
-        rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
-        if (weatherID >= 600) {
-            rainCtx.fillStyle = 'rgba(200,200,200,0.75)'; // 雪花颜色
+
+        if (weatherID >= 600) {  // 如果是雪的天气
+            rainCtx.shadowBlur = 15;
+            rainCtx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+
+            rainCtx.fillStyle = 'rgba(255,255,255,0.7)';
+            rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size * 0.5, 0, 0, Math.PI * 2);
+            rainCtx.fill();
+
+            rainCtx.shadowBlur = 7;
+            rainCtx.fillStyle = 'rgba(200,200,200,0.8)';
+            rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.47, droplet.size * 0.47, 0, 0, Math.PI * 2);
+
+            // 从中心向外扩散的圆形雪花效果
+            // for (let i = 0; i < 8; i++) {
+            //     let opacity = 0.75 - i * 0.1;  // 随着圆的扩散，透明度逐渐降低
+            //     rainCtx.fillStyle = `rgba(200, 200, 200, ${opacity})`;  // 调整透明度
+            //     let radius = droplet.size * (0.15 + i * 0.15);  // 半径逐渐变大
+            //     rainCtx.beginPath();
+            //     rainCtx.arc(droplet.x, droplet.y, radius, 0, Math.PI * 2);  // 绘制圆形
+            //     rainCtx.fill();
+            // }
         } else {
             rainCtx.fillStyle = 'rgba(130,130,130,0.5)'; // 雨滴颜色
+            // 移除模糊效果，雨滴不需要模糊
+            rainCtx.shadowBlur = 0;
+            rainCtx.shadowColor = 'transparent';
+            // 绘制椭圆形雨滴
+            rainCtx.ellipse(droplet.x, droplet.y, droplet.size * 0.5, droplet.size, 0, 0, Math.PI * 2);
         }
         rainCtx.fill();
-      });
+    });
+    // 请求下一帧动画
     requestAnimationFrame(animateRain);
   }
 
@@ -859,7 +885,7 @@
 <main>
 
   <!-- 设置图片为全屏背景 -->
-  <img id="myImage" src="backgrounds/background2.jpg" alt="Background" class="fullscreen-image">
+  <img id="myImage" src="backgrounds/background9.jpg" alt="Background" class="fullscreen-image">
 
   <!-- 搜索功能组件 -->
   <div class="search-container" style="top: {searchContainerTop}; left: {searchContainerLeft}; z-index: 1;">
